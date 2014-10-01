@@ -1,13 +1,14 @@
-#include <stdio.h>
-#include <unistd.h>
+#include "lib.c"
+
+/*
+   null - virtually no memory footprint
+
+   This program doesn't allocate any memory, either on the
+   heap or on the stack.
+
+ */
 
 int main(int argc, char **argv)
 {
-	pid_t pid = getpid();
-	printf("pid %i\n", (int)pid);
-	printf("------------------------------------------\n"
-	       "go check /proc/%i/smaps; I'll wait...\n"
-	       "press <Enter> when you're done\n", pid);
-	fgetc(stdin);
-	return 0;
+	return wrapup();
 }
