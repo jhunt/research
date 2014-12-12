@@ -43,7 +43,9 @@ sub dumbdown
 	my %sum;
 	for my $m (@_) {
 		my $path = $m->{path};
-		$path = '[libs]' if $path =~ m{/lib/|\.so};
+		$path = '[libs]'  if $path =~ m{/lib/|\.so};
+		$path = '[stack]' if $path =~ m{^\[stack};
+		$path = '[mmap]'  if $path =~ m{^/};
 		$sum{$path}{usage}{$_} += $m->{usage}{$_}
 			for keys $m->{usage};
 	}
