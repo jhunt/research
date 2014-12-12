@@ -57,3 +57,11 @@ my $x = dumbdown(parse "/proc/$pid/smaps");
 for (sort keys %$x) {
 	printf "%10.3lfk %s\n", $x->{$_}{usage}{rss} / 1024, $_;
 }
+
+for my $m (sort keys %$x) {
+	print "$m:\n";
+	printf "  %10.3lfk %s\n", $x->{$m}{usage}{$_}, $_
+		for qw/private_clean private_dirty
+		       shared_clean  shared_dirty
+		       size swap/;
+}
