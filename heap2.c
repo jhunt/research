@@ -1,7 +1,7 @@
 #include "lib.c"
 
 /*
-   heap - heap allocation
+   heap2 - heap allocation
 
    This program uses lots of small (64k) buffers, all
    allocated on the heap, to get by the MMAP_THRESHOLD
