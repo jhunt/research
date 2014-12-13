@@ -6,15 +6,12 @@
 
 int main(int argc, char **argv)
 {
-	char *buf = malloc(BUFSIZE);
-	randomize(buf, BUFSIZE);
-
 	dirty(64, 1024);
+	wrapup();
 
 	pid_t pid = fork();
 	if (pid <  0) perror("fork");
 	if (pid == 0) {
-		//randomize(buf, BUFSIZE);
 		dirty(128, 1024);
 
 		for (;;) sleep(15);
