@@ -66,6 +66,7 @@ sub num
 my $pid = $ARGV[0] || $$;
 my $x = dumbdown(parse "/proc/$pid/smaps");
 for my $m (sort keys %$x) {
+	next if $m =~ m/^\[(vdso|vsys|libs)/;
 	print "$m:\n";
 
 	printf "  private %s [clean]  %s [dirty]\n", map { num($x->{$m}{usage}{"private_$_"} / 1024) } qw/clean dirty/;
