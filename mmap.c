@@ -10,5 +10,5 @@ int main(int argc, char **argv)
 	if (!shared) perror("mmap");
 	use(shared, 128 MB);
 
-	return wrapup();
+	return interlude();
 }

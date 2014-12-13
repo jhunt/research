@@ -45,7 +45,7 @@ static void dirty(size_t n, size_t size)
 }
 
 HELPER
-static int wrapup(void)
+static int interlude(void)
 {
 	pid_t pid = getpid();
 	printf("pid %i\n", (int)pid);

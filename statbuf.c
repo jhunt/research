@@ -19,5 +19,5 @@ static char buf[BUFSIZE] = {0};
 int main(int argc, char **argv)
 {
 	randomize(buf, BUFSIZE);
-	return wrapup();
+	return interlude();
 }

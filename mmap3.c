@@ -9,5 +9,5 @@ int main(int argc, char **argv)
 	if (!file) perror("mmap");
 	randomize(file, 256 KB);
 
-	return wrapup();
+	return interlude();
 }

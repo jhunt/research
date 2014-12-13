@@ -7,7 +7,7 @@
 int main(int argc, char **argv)
 {
 	dirty(64, 1024);
-	wrapup();
+	interlude();
 
 	pid_t pid = fork();
 	if (pid <  0) perror("fork");
@@ -19,7 +19,7 @@ int main(int argc, char **argv)
 	}
 
 	printf("child %i\n", (int)pid);
-	wrapup();
+	interlude();
 
 	kill(pid, SIGTERM);
 	return 0;

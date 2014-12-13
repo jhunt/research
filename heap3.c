@@ -17,5 +17,5 @@ int main(int argc, char **argv)
 	clean(256, 1024);
 	dirty(512, 1024);
 
-	return wrapup();
+	return interlude();
 }

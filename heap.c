@@ -23,5 +23,5 @@ int main(int argc, char **argv)
 	char *buf = malloc(BUFSIZE);
 	randomize(buf, BUFSIZE);
 
-	return wrapup();
+	return interlude();
 }

@@ -26,5 +26,5 @@ int main(int argc, char **argv)
 		if (i < NBUFS / 2) randomize(bufs[i], BUFSIZE);
 	}
 
-	return wrapup();
+	return interlude();
 }

@@ -20,7 +20,7 @@ static int recurse(int n)
 	char buf[BUFSIZE] = {0};
 	randomize(buf, BUFSIZE);
 
-	return n == 0 ? wrapup()
+	return n == 0 ? interlude()
 	              : recurse(n - 1);
 }
 
