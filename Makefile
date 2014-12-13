@@ -3,8 +3,8 @@ CFLAGS := -Wall -g2 -O0
 BINARIES :=
 BINARIES += null
 BINARIES += statbuf
-BINARIES += recur
-BINARIES += heap heap2 heap3
+BINARIES += stack
+BINARIES += heap
 BINARIES += mmap mmap2 mmap3
 BINARIES += fork
 

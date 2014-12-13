@@ -1,10 +1,8 @@
 *.o
 null
 statbuf
-recur
+stack
 heap
-heap2
-heap3
 mmap
 mmap2
 mmap3

@@ -13,11 +13,9 @@
 
  */
 
-#define BUFSIZE 32 * 1024 * 1024
-static char buf[BUFSIZE] = {0};
-
+static char buf[32 MB] = {0};
 int main(int argc, char **argv)
 {
-	randomize(buf, BUFSIZE);
+	randomize(buf, 32 MB);
 	return interlude();
 }

@@ -16,12 +16,9 @@
 
  */
 
-#define BUFSIZE 256 * 1024 * 1024
-
 int main(int argc, char **argv)
 {
-	char *buf = malloc(BUFSIZE);
-	randomize(buf, BUFSIZE);
-
+	dirty(256, 1 MB);
+	clean(128, 1 MB);
 	return interlude();
 }
