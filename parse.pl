@@ -63,7 +63,7 @@ sub num
 	return sprintf("%8.1lf G", $n / 1024);
 }
 
-my $pid = $ARGV[0] || $$;
+my $pid = $ARGV[0] or die "USAGE: $0 PID\n";
 my $x = dumbdown(parse "/proc/$pid/smaps");
 for my $m (sort keys %$x) {
 	next if $m =~ m/^\[(vdso|vsys|libs)/;
