@@ -4,6 +4,7 @@
 #include <string.h>
 #include <sys/mman.h>
 
+#define MB * 1024 * 1024
 #define HELPER __attribute__ ((unused))
 
 HELPER
@@ -20,6 +21,22 @@ static void use(char *buf, size_t n)
 	size_t i;
 	for (i = 0; i < n; i++) {
 		x += i;
+	}
+}
+
+HELPER
+static void clean(size_t n, size_t size)
+{
+	while (n-- != 0)
+		calloc(size, sizeof(char));
+}
+
+HELPER
+static void dirty(size_t n, size_t size)
+{
+	while (n-- != 0) {
+		char *x = calloc(size, sizeof(char));
+		randomize(x, size);
 	}
 }
 
