@@ -8,14 +8,14 @@ sub parse
 
 	open my $fh, "<", $file or return;
 	while (<$fh>) {
-		if (m/^([0-9a-f]+)-([0-9a-f]+) (\S+) ([0-9a-f]+) ([0-9a-f]+:[0-9a-f]+) ([0-9]+)\s+(\S+)$/) {
+		if (m/^([0-9a-f]+)-([0-9a-f]+) (\S+) ([0-9a-f]+) ([0-9a-f]+:[0-9a-f]+) ([0-9]+)\s+(\S*)$/) {
 			$this = {
 				address => { start => $1, end => $2 },
 				mode    => $3,
 				offset  => int($4),
 				dev     => $5,
 				inode   => int($6),
-				path    => $7,
+				path    => $7 || '[mmap]',
 			};
 			push @smaps, $this;
 			next;
@@ -52,16 +52,25 @@ sub dumbdown
 	return \%sum;
 }
 
-my $pid = $ARGV[0] || $$;
-my $x = dumbdown(parse "/proc/$pid/smaps");
-for (sort keys %$x) {
-	printf "%10.3lfk %s\n", $x->{$_}{usage}{rss} / 1024, $_;
+sub num
+{
+	my ($n) = @_;
+	return sprintf("%8s  ", "-") if !$n;
+	return sprintf("%8.1lf k", $n) if $n < 1024;
+	$n /= 1024;
+	return sprintf("%8.1lf M", $n) if $n < 1024;
+	$n /= 1024;
+	return sprintf("%8.1lf G", $n / 1024);
 }
 
+my $pid = $ARGV[0] || $$;
+my $x = dumbdown(parse "/proc/$pid/smaps");
 for my $m (sort keys %$x) {
 	print "$m:\n";
-	printf "  %10.3lfk %s\n", $x->{$m}{usage}{$_}, $_
-		for qw/private_clean private_dirty
-		       shared_clean  shared_dirty
-		       size swap/;
+
+	printf "  private %s [clean]  %s [dirty]\n", map { num($x->{$m}{usage}{"private_$_"} / 1024) } qw/clean dirty/;
+	printf "   shared %s [clean]  %s [dirty]\n", map { num($x->{$m}{usage}{"shared_$_"}  / 1024) } qw/clean dirty/;
+	printf "      rss %s\n", num($x->{$m}{usage}{rss}  / 1024);
+	printf "     swap %s\n", num($x->{$m}{usage}{swap} / 1024);
+	print "\n";
 }
