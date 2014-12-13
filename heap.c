@@ -1,6 +1,4 @@
 #include "lib.c"
-#include <string.h>
-#include <stdlib.h>
 
 /*
    heap - heap allocation
@@ -23,7 +21,7 @@
 int main(int argc, char **argv)
 {
 	char *buf = malloc(BUFSIZE);
-	memset(buf, 42, BUFSIZE);
+	randomize(buf, BUFSIZE);
 
 	return wrapup();
 }

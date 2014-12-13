@@ -1,6 +1,4 @@
 #include "lib.c"
-#include <string.h>
-#include <stdlib.h>
 
 /*
    heap - heap allocation
@@ -25,7 +23,7 @@ int main(int argc, char **argv)
 	int i;
 	for (i = 0; i < NBUFS; i++) {
 		bufs[i] = malloc(BUFSIZE);
-		if (i < NBUFS / 2) memset(bufs[i], 42, BUFSIZE);
+		if (i < NBUFS / 2) randomize(bufs[i], BUFSIZE);
 	}
 
 	return wrapup();

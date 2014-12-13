@@ -1,5 +1,4 @@
 #include "lib.c"
-#include <string.h>
 
 /*
    statbuf - static memory allocation
@@ -19,7 +18,6 @@ static char buf[BUFSIZE] = {0};
 
 int main(int argc, char **argv)
 {
-	memset(buf, 42, BUFSIZE);
-
+	randomize(buf, BUFSIZE);
 	return wrapup();
 }

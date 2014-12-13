@@ -1,5 +1,4 @@
 #include "lib.c"
-#include <string.h>
 
 /*
    recur - stack recrusion allocation
@@ -19,7 +18,7 @@
 static int recurse(int n)
 {
 	char buf[BUFSIZE] = {0};
-	memset(buf, 42, BUFSIZE);
+	randomize(buf, BUFSIZE);
 
 	return n == 0 ? wrapup()
 	              : recurse(n - 1);

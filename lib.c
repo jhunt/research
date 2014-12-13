@@ -1,5 +1,13 @@
 #include <unistd.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+static void randomize(char *buf, size_t n)
+{
+	char c = rand() & 0xff;
+	memset(buf, c, n);
+}
 
 static int wrapup(void)
 {
