@@ -4,6 +4,8 @@ BINARIES :=
 BINARIES += null
 BINARIES += statbuf
 BINARIES += recur
+BINARIES += heap
+BINARIES += heap2
 
 all: $(BINARIES)
 clean:
