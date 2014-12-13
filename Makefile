@@ -5,6 +5,7 @@ BINARIES += null
 BINARIES += statbuf
 BINARIES += recur
 BINARIES += heap heap2 heap3
+BINARIES += mmap
 
 all: $(BINARIES)
 clean:
