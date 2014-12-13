@@ -19,12 +19,7 @@ static char buf[BUFSIZE] = {0};
 
 int main(int argc, char **argv)
 {
-	/* this is mostly to quell GCC warnings
-	   about unused (but defined) variables. */
-	int c, i;
-	for (i = 0; i < BUFSIZE; i++)
-		c += buf[i];
-	i = c;
+	memset(buf, 42, BUFSIZE);
 
 	return wrapup();
 }

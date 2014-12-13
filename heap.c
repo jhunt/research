@@ -22,14 +22,8 @@
 
 int main(int argc, char **argv)
 {
-	/* this is mostly to quell GCC warnings
-	   about unused (but defined) variables. */
-
 	char *buf = malloc(BUFSIZE);
-	int c, i;
-	for (i = 0; i < BUFSIZE / 2; i++)
-		c += buf[i];
-	i = c;
+	memset(buf, 42, BUFSIZE);
 
 	return wrapup();
 }

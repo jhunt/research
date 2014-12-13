@@ -25,14 +25,7 @@ int main(int argc, char **argv)
 	int i;
 	for (i = 0; i < NBUFS; i++) {
 		bufs[i] = malloc(BUFSIZE);
-		if (i < NBUFS / 2) continue;
-
-		/* this is mostly to quell GCC warnings
-		   about unused (but defined) variables. */
-		int c, j;
-		for (j = 0; j < BUFSIZE; j++)
-			c += bufs[i][j];
-		j = c;
+		if (i < NBUFS / 2) memset(bufs[i], 42, BUFSIZE);
 	}
 
 	return wrapup();
