@@ -5,7 +5,7 @@ BINARIES += null
 BINARIES += statbuf
 BINARIES += recur
 BINARIES += heap heap2 heap3
-BINARIES += mmap mmap2
+BINARIES += mmap mmap2 mmap3
 BINARIES += fork
 
 all: $(BINARIES)
