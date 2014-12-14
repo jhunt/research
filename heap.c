@@ -2,7 +2,7 @@
 
 int main(int argc, char **argv)
 {
-	dirty(256 KB);
-	clean(128 KB);
+	dirty(16 MB);
+	clean(32 MB);
 	return interlude();
 }
