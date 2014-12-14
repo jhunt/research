@@ -71,7 +71,5 @@ for my $m (sort keys %$x) {
 
 	printf "  private %s [clean]  %s [dirty]\n", map { num($x->{$m}{usage}{"private_$_"} / 1024) } qw/clean dirty/;
 	printf "   shared %s [clean]  %s [dirty]\n", map { num($x->{$m}{usage}{"shared_$_"}  / 1024) } qw/clean dirty/;
-	printf "      rss %s\n", num($x->{$m}{usage}{rss}  / 1024);
-	printf "     swap %s\n", num($x->{$m}{usage}{swap} / 1024);
 	print "\n";
 }
