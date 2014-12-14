@@ -6,6 +6,7 @@ BINARIES += buf
 BINARIES += stack
 BINARIES += heap
 BINARIES += mmap
+BINARIES += huge
 BINARIES += fork
 
 all: $(BINARIES)
