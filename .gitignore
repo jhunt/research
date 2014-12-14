@@ -1,9 +1,7 @@
 *.o
 null
-statbuf
+buf
 stack
 heap
 mmap
-mmap2
-mmap3
 fork

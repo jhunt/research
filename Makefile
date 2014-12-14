@@ -1,11 +1,11 @@
-CFLAGS := -Wall -g2 -O0
+CFLAGS := -Wall -g2 -O0 -Wno-unused
 
 BINARIES :=
 BINARIES += null
-BINARIES += statbuf
+BINARIES += buf
 BINARIES += stack
 BINARIES += heap
-BINARIES += mmap mmap2 mmap3
+BINARIES += mmap
 BINARIES += fork
 
 all: $(BINARIES)

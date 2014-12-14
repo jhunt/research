@@ -5,7 +5,10 @@
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <signal.h>
 #include <fcntl.h>
+#include <assert.h>
 
 #define KB * 1024
 #define MB * 1024 * 1024
@@ -14,34 +17,22 @@
 HELPER
 static void randomize(char *buf, size_t n)
 {
-	char c = rand() & 0xff;
-	memset(buf, c, n);
+	assert(buf);
+	memset(buf, rand() & 0xff, n);
 }
 
 HELPER
-static void use(char *buf, size_t n)
+static void clean(int b)
 {
-	int x = 0;
-	size_t i;
-	for (i = 0; i < n; i++) {
-		x += i;
-	}
+	for (; b > 0; b -= 1 KB)
+		calloc(1 KB, sizeof(char));
 }
 
 HELPER
-static void clean(size_t n, size_t size)
+static void dirty(int b)
 {
-	while (n-- != 0)
-		calloc(size, sizeof(char));
-}
-
-HELPER
-static void dirty(size_t n, size_t size)
-{
-	while (n-- != 0) {
-		char *x = calloc(size, sizeof(char));
-		randomize(x, size);
-	}
+	for (; b > 0; b -= 1 KB)
+		randomize(calloc(1 KB, sizeof(char)), 1 KB);
 }
 
 HELPER
@@ -54,4 +45,11 @@ static int interlude(void)
 	       "press <Enter> when you're done\n", pid);
 	fgetc(stdin);
 	return 0;
+}
+
+void child(void)
+{
+	printf("child %i\n", (int)getpid());
+	for (;;) sleep(15);
+	exit(0);
 }
