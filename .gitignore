@@ -1,8 +1,2 @@
+*.sw[a-p]
 *.o
-null
-buf
-stack
-heap
-huge
-mmap
-fork
