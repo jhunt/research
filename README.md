@@ -5,13 +5,6 @@ What is this?
 
 It's research.
 
-dist-rrd/
----------
-
-Research into (consistent) hashing techniques and methodologies.
-
-[http://jameshunt.us/writings/dist-rrd.html](http://jameshunt.us/writings/dist-rrd.html)
-
 smaps/
 ------
 
