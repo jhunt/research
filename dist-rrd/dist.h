@@ -6,6 +6,8 @@
 typedef struct {
 	const char *name;
 	uint8_t     weight;
+
+	uint32_t    u; /* only used for analysis */
 } node_t;
 
 typedef struct {
@@ -23,6 +25,6 @@ uint64_t murmur64a(const void *key, unsigned int len, unsigned int seed);
 uint64_t murmur64b(const void *key, unsigned int len, unsigned int seed);
 
 int ring_init(ring_t* ring, node_t *nodes, unsigned int n);
-node_t* lookup(const char *key);
+node_t* lookup(ring_t *ring, const char *key);
 
 #endif

@@ -33,6 +33,7 @@ int ring_init(ring_t* ring, node_t *nodes, unsigned int n)
 	ring->vnodes = calloc(ring->len, sizeof(vnode_t));
 	assert(ring->vnodes != NULL);
 	for (i = k = 0; i < n && k < ring->len; i++) {
+		nodes[i].u = 0;
 		for (j = 0; j < ring->spread * nodes[i].weight; j++, k++) {
 			ring->vnodes[k].node = &nodes[i];
 			ring->vnodes[k].key  = s_node_key(&nodes[i], j);
@@ -44,7 +45,16 @@ int ring_init(ring_t* ring, node_t *nodes, unsigned int n)
 	return 0;
 }
 
-node_t* lookup(const char *key)
+node_t* lookup(ring_t *ring, const char *key)
 {
+	uint64_t h = murmur64a(key, strlen(key), 0);
+	if (h > ring->vnodes[ring->len - 1].key)
+		return ring->vnodes[0].node;
+
+	unsigned int i;
+	for (i = 0; i < ring->len; i++)
+		if (h <= ring->vnodes[i].key)
+			return ring->vnodes[i].node;
+
 	return NULL;
 }

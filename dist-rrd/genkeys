@@ -1,0 +1,17 @@
+#!/usr/bin/perl
+
+my @types  = qw/web db asset cache mon/;
+my @checks = qw/memory load cpu disk procs forks swap syslog ntp ssh logs authlog dmesg/;
+
+my $MAX = shift @ARGV || 16;
+
+my $n = 0;
+for (;;) {
+	$n++;
+	for my $t (@types) {
+		for my $c (@checks) {
+			printf "%s%02i.example.com:%s\n", $t, $n, $c;
+			exit 0 unless --$MAX;
+		}
+	}
+}
