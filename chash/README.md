@@ -1,5 +1,5 @@
-dist-rrd - jameshunt(.us) Research
-==================================
+chash - jameshunt(.us) Research
+===============================
 
 This is **DRAFT** research.  The blog post is published (but not
 syndicated).  Send comments to [feedback@jameshunt.us](mailto:feedback@jameshunt.us)
