@@ -16,6 +16,7 @@
 #define JNZ   8 /* jump if accumulator != 0    - jnz @addr */
 #define JMP   9 /* unconditional jump          - jmp @addr */
 #define HALT 10 /* halt the virtual machine    - halt      */
+#define DUMP 11 /* dump internal vm state      - dump      */
 
 #define T_LITERAL  0x1
 #define T_REGISTER 0x2
@@ -31,6 +32,8 @@ static const char *OP_NAMES[] = {
 	"cmp",
 	"jz",
 	"jnz",
+	"halt",
+	"dump",
 	NULL,
 };
 
@@ -141,6 +144,7 @@ int vm_exec(vm_t *vm)
 				B_ERR("register %08x is out of bounds", oper1);
 
 			printf("push (%08x)\n", oper1);
+			push(&vm->dstack, vm->r[oper1]);
 			break;
 
 		case POP:
@@ -151,6 +155,7 @@ int vm_exec(vm_t *vm)
 				B_ERR("register %08x is out of bounds", oper1);
 
 			printf("pop (%08x)\n", oper1);
+			vm->r[oper1] = pop(&vm->dstack);
 			break;
 
 		case SET:
@@ -159,9 +164,8 @@ int vm_exec(vm_t *vm)
 				B_ERR("set requires a register index for operand 1");
 			if (oper1 > NREGS)
 				B_ERR("register %08x is out of bounds", oper1);
-			if (!is_value(f2))
-				B_ERR("set requires a literal value for operand 2");
 
+			vm->r[oper1] = value_of(vm, f2, oper2);
 			printf("set (%08x) (%08x)\n", oper1, oper2);
 			break;
 
@@ -199,6 +203,35 @@ int vm_exec(vm_t *vm)
 			ARG0("halt");
 			printf("halt\n");
 			return 0;
+
+		case DUMP:
+			ARG0("dump");
+			printf("dump\n");
+
+			fprintf(stderr, "\n");
+			fprintf(stderr, "    ---------------------------------------------------------------------\n");
+			fprintf(stderr, "    %%%c [ %08x ]   %%%c [ %08x ]   %%%c [ %08x ]   %%%c [ %08x ]\n",
+				'a', vm->r[0],  'b', vm->r[1], 'c', vm->r[2],  'd', vm->r[3]);
+			fprintf(stderr, "    %%%c [ %08x ]   %%%c [ %08x ]   %%%c [ %08x ]   %%%c [ %08x ]\n",
+				'e', vm->r[4],  'f', vm->r[5], 'g', vm->r[6],  'h', vm->r[7]);
+			fprintf(stderr, "    %%%c [ %08x ]   %%%c [ %08x ]   %%%c [ %08x ]   %%%c [ %08x ]\n",
+				'i', vm->r[8],  'j', vm->r[9], 'k', vm->r[10], 'l', vm->r[11]);
+			fprintf(stderr, "    %%%c [ %08x ]   %%%c [ %08x ]   %%%c [ %08x ]   %%%c [ %08x ]\n",
+				'm', vm->r[12], 'n', vm->r[13], 'o', vm->r[14], 'p', vm->r[15]);
+			fprintf(stderr, "\n");
+
+			fprintf(stderr, "    acc: %08x\n", vm->acc);
+			fprintf(stderr, "     pc: %08x\n", vm->pc);
+			fprintf(stderr, "\n");
+
+			fprintf(stderr, "    data stack: | %04x | 0\n", vm->dstack.val[0]);
+			for (int i = 1; i < vm->dstack.top; i++)
+				fprintf(stderr, "                | %04x | %i\n", vm->dstack.val[i], i);
+
+			fprintf(stderr, "    ---------------------------------------------------------------------\n\n");
+			break;
+
+
 
 		default:
 			B_ERR("unknown operand %02x", op);
@@ -240,19 +273,20 @@ int main (int argc, char **argv)
 	size_t n;
 	byte_t code[] =
 		"\x00\0"                       /*   2 */
-		"\x01\x20\x00\x00\x00\x01"     /*   8 */
-		"\x02\x20\x00\x00\x00\x01"     /*  14 */
-		"\x03\x21\x00\x00\x00\x04"     /*  20 */
-		        "\x53\x52\x51\x50"     /*  24 */
-		"\x04\x10\x68\x67\x66\x65"     /*  28 */
-		"\x05\0"                       /*  30 */
+		"\x03\x21\x00\x00\x00\x04"     /*   8 */
+		        "\x53\x52\x51\x50"     /*  12 */
+		"\x01\x20\x00\x00\x00\x04"     /*  18 */
+		"\x0b\0"                       /*  20 */
+		"\x04\x10\x68\x67\x66\x65"     /*  26 */
+		"\x05\0"                       /*  28 */
 		"\x06\x11\x51\x52\x53\x54"     /*  34 */
 		        "\x41\x42\x43\x44"     /*  38 */
 		"\x07\x10\x39\x38\x37\x36"     /*  44 */
 		"\x08\x10\x29\x28\x27\x26"     /*  50 */
-		"\x09\x10\x19\x18\x17\x16"     /*  54 */
-		"\x0a\0"                       /*  56 */
-		""; n = 56;
+		"\x09\x10\x19\x18\x17\x16"     /*  56 */
+		"\x0a\0"                       /*  58 */
+		"\x01\x20\x00\x00\x00\x01"     /*  64 - never reached! */
+		""; n = 64;
 
 	vm_t vm;
 	rc = vm_reset(&vm);
