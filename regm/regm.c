@@ -207,6 +207,30 @@ int vm_exec(vm_t *vm)
 	}
 }
 
+int push(stack_t *st, dword_t value)
+{
+	assert(st);
+	if (st->top == 254) {
+		fprintf(stderr, "stack overflow!\n");
+		abort();
+	}
+
+	st->val[st->top++] = value;
+	return 0;
+}
+
+dword_t pop(stack_t *st)
+{
+	assert(st);
+	if (st->top == 0) {
+		fprintf(stderr, "stack underflow!\n");
+		abort();
+	}
+
+	return st->val[st->top--];
+}
+
+
 
 
 

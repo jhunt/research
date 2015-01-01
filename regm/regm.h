@@ -62,4 +62,7 @@ int vm_reset(vm_t *vm);
 int vm_prime(vm_t *vm, byte_t *code, size_t len);
 int vm_exec(vm_t *vm);
 
+int push(stack_t *st, dword_t value);
+dword_t pop(stack_t *st);
+
 #endif
