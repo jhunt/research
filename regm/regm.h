@@ -1,6 +1,7 @@
 #ifndef REGM_H
 #define REGM_H
 #include <stdint.h>
+#include <sys/types.h>
 
 /*
 
@@ -15,7 +16,7 @@
    15                7                 0
    | . . . . . . . . | . . . . . . . . |
    +-----------------+-----------------+
-   | r0 |     op     |   f1   |   f2   |
+   | r0 |     op     |   t1   |   t2   |
    +-----------------+-----------------+
    |        optional operand1          |
    |               ...                 |
@@ -26,24 +27,9 @@
 
    r0     [2 bits]  RESERVED; must be 00
    op     [6 bits]  opcode value (0-63)
-   f1     [4 bits]  flags for operand 1
-   f2     [4 bits]  flags for operand 2
+   t1     [4 bits]  type for operand 1
+   t2     [4 bits]  type for operand 2
    operands are 32-bit DWORDs
-
-
-   operand flag format (f1/f2):
-
-   3         0
-   | . . . . |
-   +---------+
-   | x <--------- 3: RESERVED; must be 0
-   |   x <------- 2: operand type:
-   |     x <----- 1:   00 = literal integer
-   |                   01 = memory address
-   |                   02 = register index
-   |                   03 = RESERVED
-   |       x <--- 0: present (1) or absent (0)
-   +---------+
 
  */
 
@@ -56,16 +42,20 @@ typedef struct {
 	byte_t  top;
 } stack_t;
 
+#define NREGS 16
 typedef struct {
-	word_t   reg[8]; /* generic registers */
+	word_t   r[16];  /* generic registers */
 	word_t   acc;    /* accumulator register */
 	word_t   pc;     /* program counter register */
 
 	stack_t  dstack; /* data stack */
 	stack_t  istack; /* instruction stack */
 
-	byte_t  *code;
 	size_t   codesize;
+	byte_t  *code;
+
+	size_t   heapsize;
+	word_t  *heap;
 } vm_t;
 
 int vm_reset(vm_t *vm);
