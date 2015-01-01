@@ -38,15 +38,15 @@ typedef uint16_t  word_t;
 typedef uint32_t dword_t;
 
 typedef struct {
-	word_t  val[254];
+	dword_t val[254];
 	byte_t  top;
 } stack_t;
 
 #define NREGS 16
 typedef struct {
-	word_t   r[16];  /* generic registers */
-	word_t   acc;    /* accumulator register */
-	word_t   pc;     /* program counter register */
+	dword_t   r[16];  /* generic registers */
+	dword_t   acc;    /* accumulator register */
+	dword_t   pc;     /* program counter register */
 
 	stack_t  dstack; /* data stack */
 	stack_t  istack; /* instruction stack */

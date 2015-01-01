@@ -1,6 +1,7 @@
 #include "regm.h"
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include <assert.h>
 
 /* OPERANDS */
@@ -73,8 +74,8 @@ int vm_prime(vm_t *vm, byte_t *code, size_t len)
 #define is_address(fl)  ((fl) == T_ADDRESS)
 #define is_register(fl) ((fl) == T_REGISTER)
 
-#define BADVALUE 0xffff
-word_t value_of(vm_t *vm, byte_t type, word_t arg)
+#define BADVALUE 0xffffffff
+dword_t value_of(vm_t *vm, byte_t type, dword_t arg)
 {
 	switch (type) {
 	case T_LITERAL:
