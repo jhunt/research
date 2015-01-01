@@ -16,11 +16,11 @@ res.file.absent {
 
   unlink:
     call &fs.unlink
-    jnz +1
+    jnz +2
+    mark
     ret 0
 
-    estr %b
-    err "failed to remove %s: %s"
+    perror "failed to remove %s"
     bail
 }
 
@@ -38,26 +38,21 @@ res.file.present {
     call &fs.unlink
     jz create
 
-    estr %b
-    err "failed to replace %s with a regular file: %s"
+    perror "failed to replace %s with a regular file"
     bail
 
   create:
     call &fs.mkfile
-    jnz +1
+    jnz +2
+    mark
     ret 0
 
-    estr %b
-    err "failed to create regular file %s: %s"
+    perror "failed to create regular file %s"
     bail
 }
 
 res.file.chown {
-    push %a
-    set %a 1        ; find by name
-                    ; %b should be username
-
-    call &user.find
+    getuid %b %c
     jz ok
 
     ; re-arrange registers for err call
@@ -66,25 +61,17 @@ res.file.chown {
     bail
 
   ok:
-    set %a %b
-    call &user.get_uid
-
-    pop %a          ; get path back
-    call &fs.chown
-    jnz +1
+    chown %a %c
+    jnz +2
+    mark
     ret 0
 
-    estr %c
-    err "failed to change ownership of %s to %s: %s"
+    perror "failed to change ownership of %s to %s"
     bail
 }
 
 res.file.chgrp {
-    push %a
-    set %a 1        ; find by name
-                    ; %b should be group name
-
-    call &group.find
+    getgid %b %c
     jz ok
 
     ; re-arrange registers for err call
@@ -93,31 +80,85 @@ res.file.chgrp {
     bail
 
   ok:
-    set %a %b
-    call &group.get_gid
-
-    pop %a          ; get path back
-    call &fs.chgrp
-    jnz +1
+    chgrp %a %c
+    jnz +2
+    mark
     ret 0
 
-    estr %c
-    err "failed to change group ownership of %s to %s: %s"
+    perror "failed to change group ownership of %s to %s: %s"
     bail
 }
 
 res.file.chmod
 {
     call &fs.chmod
-    jnz +1
+    jnz +2
+    mark
     ret 0
 
-    estr %c
-    err "failed to set mode of %s to %04o: %s"
+    perror "failed to set mode of %s to %04o: %s"
     bail
 }
 
-res.file.template
+res.file.diff
+{
+    ; %a is path
+    ; %b is remote sha1
+
+    sha1 %a %r
+    jz +2
+    perror "failed to calculate SHA1 for local copy of %s"
+    bail
+
+    strcmp %b %r
+    ret
+}
+
+res.file.update
+{
+    ; %a is path
+    ; %b is remote sha1
+    ; %c is cached/not
+
+    call &server.writefile
+    jnz +1
+    ret
+
+    err "failed to update contents of %s"
+    bail
+}
+
+res.file.verify
+{
+    ; %a is temp path
+    ; %b is real path
+    ; %c is verify command
+    ; %d is expected rc
+
+    push %b
+    push %a
+
+    set %a %c
+    set %b 0 ; run as user root
+    set %c 0 ; run as group root
+
+    call &exec %e
+    cmp %d %e
+    jz +1
+    ret
+
+    pop %a
+    pop %b
+    rename %a %b
+    jnz +1
+    ret 0
+
+    unlink %a
+    perror "failed to rename %s to %s"
+    bail
+}
+
+res.file.contents
 {
     ; %a is path
     ; %b is remote sha1
@@ -127,81 +168,47 @@ res.file.template
     ; %f is expected rc
     ; %g is tempfile
 
-    call &fs.sha1
-    jz sha1
-
-    estr %b
-    err "failed to calculate SHA1 for local copy of %s"
-    bail
-
-  sha1:
-    ; local SHA1 is in %r
-    strc %b %r
+    call res.file.diff
     jnz +1
-    ret 0
+    ret
 
-    push %a
-    set %a %r
-    note "updating local content (%s) from remote copy (%s)"
-    pop %a
+    ;; files differ
+    cmp %d 1                  ; should we use %g (tempfile)
+    jnz update                ; in place of %a (real path)?
 
-    push %a
-    cmp %d 0                  ; should we write to a tempfile?
-    jnz update
-    set %a %g                 ; set %a to a tempfile, for verification
+    swap %g %a                ; yes.  update the contents of
+                              ; the tempfile first, so we can
+                              ; run the verify (%e) command
 
   update:
-    call &server.writefile
-    jz check
+    call res.file.update      ; no need to check return value
+                              ; res.file.update will bail if
+                              ; there were any problems
 
-    pop %a
-    err "failed to update local file contents of %s"
-    bail
-
-  check:
-    cmp %d 0                  ; we can ret 0 if we had no verify step
+    cmp %d 1                  ; run the verification?
     jz verify
+    mark
+    ret
+
+  verify:
+    set %b %g                 ; real path
+    set %c %e                 ; verify command
+    set %d %f                 ; expected rc
+
+    call res.file.verify      ; no need to check return value
+                              ; res.file.verify will bail if
+                              ; there are any problems
+    mark
     ret 0
-
-  verify;
-    set %a %e
-    set %b 0   ; run as user root
-    set %b 0   ; run as group root
-    call &exec.check
-    jz +4
-
-    estr %b
-    err "failed to run command `%s`: %s"
-    pop %a
-    bail
-
-    cmp %f %r
-    jz rename
-
-    set %b %r
-    set %c %f
-    err "pre-change verification check `%s` failed: returned %i (not %i)"
-    call &fs.unlink
-    pop %a
-    bail
-
-  rename:
-    set %a %e
-    pop %b
-    call &fs.rename
-    jnz +1
-    ret 0
-
-    estr %c
-    err "rename of %s to %e failed: %s"
-    bail
 }
 
 entry:
 
+@@@ file:/path/to/delete @@@
   set %a "/path/to/delete"
   call res.file.absent
 
+@@@ file:/etc/sudoers @@@
   set %a "/etc/sudoers"
   call res.file.present
 
