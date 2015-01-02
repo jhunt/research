@@ -1,57 +1,55 @@
 ; these are comments
 
-res.file.absent {
-    call &fs.exists?
+fn res.file.absent
+    fstat %a
     jz +1
-    ret 0
+    retv 0
 
-    call &fs.is_file?
-    jz unlink
+    isfile %a
+    jz rm
 
-    call &fs.is_symlink?
-    jz unlink
+    islink %a
+    jz rm
 
     err "%s exists, but is not a regular file"
     bail
 
-  unlink:
-    call &fs.unlink
+  rm:
+    unlink %a
     jnz +2
     mark
-    ret 0
+    retv 0
 
     perror "failed to remove %s"
     bail
-}
 
-res.file.present {
-    call &fs.exists?
+fn res.file.present
+    fstat %a
     jnz create
 
-    call &fs.is_symlink?
+    islink %a
     jz remove
 
     err "%s exists, but is not a regular file"
     bail
 
   remove:
-    call &fs.unlink
+    unlink %a
     jz create
 
     perror "failed to replace %s with a regular file"
     bail
 
   create:
-    call &fs.mkfile
+    touch %a
     jnz +2
     mark
-    ret 0
+    retv 0
 
     perror "failed to create regular file %s"
     bail
-}
 
-res.file.chown {
+fn res.file.chown
     getuid %b %c
     jz ok
 
@@ -64,13 +62,12 @@ res.file.chown {
     chown %a %c
     jnz +2
     mark
-    ret 0
+    retv 0
 
     perror "failed to change ownership of %s to %s"
     bail
-}
 
-res.file.chgrp {
+fn res.file.chgrp
     getgid %b %c
     jz ok
 
@@ -83,53 +80,45 @@ res.file.chgrp {
     chgrp %a %c
     jnz +2
     mark
-    ret 0
+    retv 0
 
     perror "failed to change group ownership of %s to %s: %s"
     bail
-}
 
-res.file.chmod
-{
-    call &fs.chmod
+fn res.file.chmod
+    chmod %a %b
     jnz +2
     mark
-    ret 0
+    retv 0
 
     perror "failed to set mode of %s to %04o: %s"
     bail
-}
 
-res.file.diff
-{
+fn res.file.diff
     ; %a is path
     ; %b is remote sha1
 
-    sha1 %a %r
+    fsha1 %a %p
     jz +2
     perror "failed to calculate SHA1 for local copy of %s"
     bail
 
-    strcmp %b %r
+    strcmp %b %p
     ret
-}
 
-res.file.update
-{
+fn res.file.update
     ; %a is path
     ; %b is remote sha1
     ; %c is cached/not
 
-    call &server.writefile
+    getfile %b %a
     jnz +1
     ret
 
     err "failed to update contents of %s"
     bail
-}
 
-res.file.verify
-{
+fn res.file.verify
     ; %a is temp path
     ; %b is real path
     ; %c is verify command
@@ -138,11 +127,10 @@ res.file.verify
     push %b
     push %a
 
-    set %a %c
-    set %b 0 ; run as user root
-    set %c 0 ; run as group root
+    set %a 0 ; run as user root
+    set %b 0 ; run as group root
 
-    call &exec %e
+    exec %c %e
     cmp %d %e
     jz +1
     ret
@@ -151,15 +139,13 @@ res.file.verify
     pop %b
     rename %a %b
     jnz +1
-    ret 0
+    retv 0
 
     unlink %a
     perror "failed to rename %s to %s"
     bail
-}
 
-res.file.contents
-{
+fn res.file.contents
     ; %a is path
     ; %b is remote sha1
     ; %c is cached/not
@@ -199,33 +185,31 @@ res.file.contents
                               ; res.file.verify will bail if
                               ; there are any problems
     mark
-    ret 0
-}
+    retv 0
 
-entry:
+fn main
+    @@@ file:/path/to/delete
+      set %a "/path/to/delete"
+      call res.file.absent
 
-@@@ file:/path/to/delete @@@
-  set %a "/path/to/delete"
-  call res.file.absent
+    @@@ file:/etc/sudoers
+      set %a "/etc/sudoers"
+      call res.file.present
 
-@@@ file:/etc/sudoers @@@
-  set %a "/etc/sudoers"
-  call res.file.present
+      ;;udbopen
+        set %b "root"
+        call res.file.chown
+        set %b "root"
+        call res.file.chgrp
+      ;;udbclose
 
-  call &users.open
-    set %b "root"
-    call res.file.chown
-    set %b "root"
-    call res.file.chgrp
-  call &userdb.close
+      set %b 0755
+      call res.file.chmod
 
-  set %b 0755
-  call res.file.chmod
-
-  set %b "decafbadcafe"   ; rsha1
-  set %c 1                ; cached
-  set %d 1                ; do verify
-  set %e "/bin/test-it -c /tmp/file"
-  set %f 0
-  set %g "/tmp/file"
-  call res.file.contents
+      set %b "decafbadcafe"   ; rsha1
+      set %c 1                ; cached
+      set %d 1                ; do verify
+      set %e "/bin/test-it -c /tmp/file"
+      set %f 0
+      set %g "/tmp/file"
+      call res.file.contents
