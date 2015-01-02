@@ -1,3 +1,5 @@
 regm
 asm
 *.o
+*.b
+*.s
