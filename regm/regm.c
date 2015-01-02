@@ -3,6 +3,11 @@
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <sys/mman.h>
 
 #include "opcodes.h"
 
@@ -23,13 +28,6 @@ int vm_prime(vm_t *vm, byte_t *code, size_t len)
 	vm->codesize = len;
 	return 0;
 }
-
-#define HI_NYBLE(_) (((_) >> 4) & 0x0f)
-#define LO_NYBLE(_) ( (_)       & 0x0f)
-#define HI_BYTE(_)  (((_) >> 8) & 0xff);
-#define LO_BYTE(_)  ( (_)       & 0xff);
-#define WORD(a,b) ((a << 8) | (b))
-#define DWORD(a,b,c,d) ((a << 24) | (b << 16) | (c << 8) | (d))
 
 #define B_ERR(...) do { \
 	fprintf(stderr, "regm bytecode error: "); \
@@ -145,19 +143,48 @@ int vm_exec(vm_t *vm)
 			printf("set (%08x) (%08x)\n", oper1, oper2);
 			break;
 
+		case SWAP:
+			ARG2("swap");
+			if (!is_register(f1))
+				B_ERR("requires a register index for operand 1");
+			if (oper1 > NREGS)
+				B_ERR("register %08x is out of bounds", oper1);
+
+			if (!is_register(f2))
+				B_ERR("swap requires a register index for operand 2");
+			if (oper2 > NREGS)
+				B_ERR("register %08x is out of bounds", oper2);
+			printf("swap (%08x) (%08x)\n", oper1, oper2);
+			break;
+
 		case CALL:
 			ARG1("call");
 			printf("call (%08x)\n", oper1);
 			break;
 
 		case RET:
-			ARG0("ret");
-			printf("ret\n");
+			if (f1) {
+				ARG1("ret");
+				printf("ret (%08x)\n", oper1);
+			} else {
+				ARG0("ret");
+				printf("ret\n");
+			}
 			break;
 
 		case CMP:
 			ARG2("cmp");
 			printf("cmp (%08x) (%08x)\n", oper1, oper2);
+			break;
+
+		case STRCMP:
+			ARG2("strcmp");
+			printf("strcmp (%08x) (%08x)\n", oper1, oper2);
+			break;
+
+		case JMP:
+			ARG1("jmp");
+			printf("jmp (%08x)\n", oper1);
 			break;
 
 		case JZ:
@@ -170,9 +197,80 @@ int vm_exec(vm_t *vm)
 			printf("jnz (%08x)\n", oper1);
 			break;
 
-		case JMP:
-			ARG1("jmp");
-			printf("jmp (%08x)\n", oper1);
+		case ERR:
+			ARG1("err");
+			printf("err (%08x)\n", oper1);
+			break;
+
+		case PERROR:
+			ARG1("perror");
+			printf("perror (%08x)\n", oper1);
+			break;
+
+		case BAIL:
+			ARG0("bail");
+			printf("bail\n");
+			break;
+
+		case MARK:
+			ARG0("mark");
+			printf("mark\n");
+			break;
+
+		case FSTAT:
+			printf("fstat\n");
+			break;
+
+		case ISFILE:
+			printf("isfile\n");
+			break;
+
+		case ISLINK:
+			printf("islink\n");
+			break;
+
+		case TOUCH:
+			printf("touch\n");
+			break;
+
+		case UNLINK:
+			printf("unlink\n");
+			break;
+
+		case RENAME:
+			printf("rename\n");
+			break;
+
+		case CHOWN:
+			printf("chown\n");
+			break;
+
+		case CHGRP:
+			printf("chgrp\n");
+			break;
+
+		case CHMOD:
+			printf("chmod\n");
+			break;
+
+		case FSHA1:
+			printf("fsha1\n");
+			break;
+
+		case GETFILE:
+			printf("getfile\n");
+			break;
+
+		case GETUID:
+			printf("getuid\n");
+			break;
+
+		case GETGID:
+			printf("getgid\n");
+			break;
+
+		case EXEC:
+			printf("exec\n");
 			break;
 
 		case HALT:
@@ -242,28 +340,28 @@ dword_t pop(stack_t *st)
 
 
 
-
-
 int main (int argc, char **argv)
 {
-	int rc;
-	size_t n;
-	byte_t code[] =
-		"\x00\0"                       /*   2 */
-		"\x03\x21\x00\x00\x00\x04"     /*   8 */
-		        "\x53\x52\x51\x50"     /*  12 */
-		"\x01\x20\x00\x00\x00\x04"     /*  18 */
-		"\x0b\0"                       /*  20 */
-		"\x04\x10\x68\x67\x66\x65"     /*  26 */
-		"\x05\0"                       /*  28 */
-		"\x06\x11\x51\x52\x53\x54"     /*  34 */
-		        "\x41\x42\x43\x44"     /*  38 */
-		"\x07\x10\x39\x38\x37\x36"     /*  44 */
-		"\x08\x10\x29\x28\x27\x26"     /*  50 */
-		"\x09\x10\x19\x18\x17\x16"     /*  56 */
-		"\x0a\0"                       /*  58 */
-		"\x01\x20\x00\x00\x00\x01"     /*  64 - never reached! */
-		""; n = 64;
+	if (argc != 2) {
+		fprintf(stderr, "USAGE: %s asm.b\n", argv[0]);
+		return 1;
+	}
+
+	int rc, fd = open(argv[1], O_RDONLY);
+	if (fd < 0) {
+		perror(argv[1]);
+		return 1;
+	}
+	off_t n = lseek(fd, 0, SEEK_END);
+	if (n < 0) {
+		perror(argv[1]);
+		return 1;
+	}
+	byte_t *code = mmap(NULL, n, PROT_READ, MAP_PRIVATE, fd, 0);
+	if (!code) {
+		perror(argv[1]);
+		return 1;
+	}
 
 	vm_t vm;
 	rc = vm_reset(&vm);
