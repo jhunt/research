@@ -239,8 +239,16 @@ getline:
 	if (*b == '"') {
 		b++; a = p->value;
 		while (*b && *b != '"' && *b != '\r' && *b != '\n') {
-			if (*b == '\\') b++;
-			*a++ = *b++;
+			if (*b == '\\') {
+				b++;
+				switch (*b) {
+				case 'n': *a = '\n'; break;
+				case 'r': *a = '\r'; break;
+				case 't': *a = '\t'; break;
+				default:  *a = *b;
+				}
+				a++; b++;
+			} else *a++ = *b++;
 		}
 		*a = '\0';
 		if (*b == '"') b++;
@@ -295,6 +303,7 @@ static int parse(void)
 #define OPERAND_FNLABEL(x)  do { op->x.type = VALUE_FNLABEL;  op->x._.fnlabel = strdup(p.value); } while (0)
 #define OPERAND_OFFSET(x)   do { op->x.type = VALUE_OFFSET;   op->x._.offset  = atoi(p.value);   } while (0)
 
+	op_t *op;
 	while (lex(&p)) {
 
 		if (!p.value[0])
@@ -305,7 +314,7 @@ static int parse(void)
 		else
 			fprintf(stderr, "%02x %-14s : %s\n", p.token, T_names[p.token], p.value);
 
-		op_t *op = calloc(1, sizeof(op_t));
+		op = calloc(1, sizeof(op_t));
 		op->fn = FN;
 
 		switch (p.token) {
@@ -313,6 +322,11 @@ static int parse(void)
 			break;
 
 		case T_FUNCTION:
+			if (FN && list_tail(&OPS, op_t, l)->op != RET) {
+				op->op = RET;
+				list_push(&OPS, &op->l);
+				op = calloc(1, sizeof(op_t));
+			}
 			FN = op;
 			op->special = SPECIAL_FUNC;
 			NEXT;
@@ -486,6 +500,14 @@ static int parse(void)
 				op->op = DUMP;
 				break;
 
+			case T_OPCODE_ECHO:
+				op->op = ECHO;
+				NEXT;
+				if (p.token != T_STRING)
+					ERROR("non-string argument given to echo opcode");
+				OPERAND_STRING(oper1);
+				break;
+
 			case T_OPCODE_ERR:
 				op->op = ERR;
 				NEXT;
@@ -509,79 +531,212 @@ static int parse(void)
 			case T_OPCODE_FSTAT:
 				op->op = FSTAT;
 				NEXT;
+				switch (p.token) {
+				case T_REGISTER: OPERAND_REGISTER(oper1); break;
+				case T_STRING:   OPERAND_STRING(oper1); break;
+				default:
+					ERROR("fstat requires a string or a register for operand 1");
+				}
 				break;
 
 			case T_OPCODE_ISFILE:
 				op->op = ISFILE;
 				NEXT;
+				switch (p.token) {
+				case T_REGISTER: OPERAND_REGISTER(oper1); break;
+				case T_STRING:   OPERAND_STRING(oper1); break;
+				default:
+					ERROR("isfile requires a string or a register for operand 1");
+				}
 				break;
 
 			case T_OPCODE_ISLINK:
 				op->op = ISLINK;
 				NEXT;
+				switch (p.token) {
+				case T_REGISTER: OPERAND_REGISTER(oper1); break;
+				case T_STRING:   OPERAND_STRING(oper1); break;
+				default:
+					ERROR("islink requires a string or a register for operand 1");
+				}
 				break;
 
 			case T_OPCODE_ISDIR:
 				op->op = ISDIR;
 				NEXT;
+				switch (p.token) {
+				case T_REGISTER: OPERAND_REGISTER(oper1); break;
+				case T_STRING:   OPERAND_STRING(oper1); break;
+				default:
+					ERROR("isdir requires a string or a register for operand 1");
+				}
 				break;
 
 			case T_OPCODE_TOUCH:
 				op->op = TOUCH;
 				NEXT;
+				switch (p.token) {
+				case T_REGISTER: OPERAND_REGISTER(oper1); break;
+				case T_STRING:   OPERAND_STRING(oper1); break;
+				default:
+					ERROR("touch requires a string or a register for operand 1");
+				}
 				break;
 
 			case T_OPCODE_UNLINK:
 				op->op = UNLINK;
 				NEXT;
+				switch (p.token) {
+				case T_REGISTER: OPERAND_REGISTER(oper1); break;
+				case T_STRING:   OPERAND_STRING(oper1); break;
+				default:
+					ERROR("unlink requires a string or a register for operand 1");
+				}
 				break;
 
 			case T_OPCODE_RENAME:
 				op->op = RENAME;
 				NEXT;
+				switch (p.token) {
+				case T_REGISTER: OPERAND_REGISTER(oper1); break;
+				case T_STRING:   OPERAND_STRING(oper1); break;
+				default:
+					ERROR("rename requires a string or a register for operand 1");
+				}
+
 				NEXT;
+				switch (p.token) {
+				case T_REGISTER: OPERAND_REGISTER(oper2); break;
+				case T_STRING:   OPERAND_STRING(oper2); break;
+				default:
+					ERROR("rename requires a string or a register for operand 2");
+				}
 				break;
 
 			case T_OPCODE_CHOWN:
 				op->op = CHOWN;
 				NEXT;
+				switch (p.token) {
+				case T_REGISTER: OPERAND_REGISTER(oper1); break;
+				case T_STRING:   OPERAND_STRING(oper1); break;
+				default:
+					ERROR("rename requires a string or a register for operand 1");
+				}
+
 				NEXT;
+				switch (p.token) {
+				case T_REGISTER: OPERAND_REGISTER(oper2); break;
+				case T_STRING:   OPERAND_STRING(oper2); break;
+				default:
+					ERROR("rename requires a string or a register for operand 2");
+				}
 				break;
 
 			case T_OPCODE_CHGRP:
 				op->op = CHGRP;
 				NEXT;
+				switch (p.token) {
+				case T_REGISTER: OPERAND_REGISTER(oper1); break;
+				case T_STRING:   OPERAND_STRING(oper1); break;
+				default:
+					ERROR("chgrp requires a string or a register for operand 1");
+				}
+
 				NEXT;
+				switch (p.token) {
+				case T_REGISTER: OPERAND_REGISTER(oper2); break;
+				case T_STRING:   OPERAND_STRING(oper2); break;
+				default:
+					ERROR("chgrp requires a string or a register for operand 2");
+				}
+
 				break;
 
 			case T_OPCODE_CHMOD:
 				op->op = CHMOD;
 				NEXT;
+				switch (p.token) {
+				case T_REGISTER: OPERAND_REGISTER(oper1); break;
+				case T_STRING:   OPERAND_STRING(oper1); break;
+				default:
+					ERROR("chmod requires a string or a register for operand 1");
+				}
+
 				NEXT;
+				switch (p.token) {
+				case T_REGISTER: OPERAND_REGISTER(oper2); break;
+				case T_NUMBER:   OPERAND_NUMBER(oper2); break;
+				default:
+					ERROR("chmod requires a number or a register for operand 2");
+				}
+				break;
 				break;
 
 			case T_OPCODE_FSHA1:
 				op->op = FSHA1;
 				NEXT;
+				switch (p.token) {
+				case T_REGISTER: OPERAND_REGISTER(oper1); break;
+				case T_STRING:   OPERAND_STRING(oper1); break;
+				default:
+					ERROR("fsha1 requires a string or a register for operand 1");
+				}
+
 				NEXT;
+				if (p.token != T_REGISTER)
+					ERROR("fsha1 requires a regsister for operand 2");
+				OPERAND_REGISTER(oper2);
 				break;
 
 			case T_OPCODE_GETFILE:
 				op->op = GETFILE;
 				NEXT;
+				switch (p.token) {
+				case T_REGISTER: OPERAND_REGISTER(oper1); break;
+				case T_STRING:   OPERAND_STRING(oper1); break;
+				default:
+					ERROR("getfile requires a string or a register for operand 1");
+				}
+
 				NEXT;
+				switch (p.token) {
+				case T_REGISTER: OPERAND_REGISTER(oper2); break;
+				case T_STRING:   OPERAND_STRING(oper2); break;
+				default:
+					ERROR("getfile requires a string or a register for operand 2");
+				}
 				break;
 
 			case T_OPCODE_GETUID:
 				op->op = GETUID;
 				NEXT;
+				switch (p.token) {
+				case T_REGISTER: OPERAND_REGISTER(oper1); break;
+				case T_STRING:   OPERAND_STRING(oper1); break;
+				default:
+					ERROR("getuid requires a string or a register for operand 1");
+				}
+
 				NEXT;
+				OPERAND_REGISTER(oper2);
+				if (p.token != T_REGISTER)
+					ERROR("getuid requires a string or a register for operand 2");
 				break;
 
 			case T_OPCODE_GETGID:
 				op->op = GETGID;
 				NEXT;
+				switch (p.token) {
+				case T_REGISTER: OPERAND_REGISTER(oper1); break;
+				case T_STRING:   OPERAND_STRING(oper1); break;
+				default:
+					ERROR("getgid requires a string or a register for operand 1");
+				}
+
 				NEXT;
+				if (p.token != T_REGISTER)
+					ERROR("getgid requires a string or a register for operand 2");
+				OPERAND_REGISTER(oper2);
 				break;
 
 			case T_OPCODE_EXEC:
@@ -606,6 +761,11 @@ static int parse(void)
 		list_push(&OPS, &op->l);
 	}
 
+	if (FN && list_tail(&OPS, op_t, l)->op != RET) {
+		op = calloc(1, sizeof(op_t));
+		op->op = RET;
+		list_push(&OPS, &op->l);
+	}
 	return 0;
 
 bail:
@@ -724,15 +884,8 @@ static int compile(void)
 	int rc;
 
 	/* phase I: runtime insertion */
-
-	/* halt */
 	op = calloc(1, sizeof(op_t));
-	op->op = HALT;
-	list_unshift(&OPS, &op->l);
-
-	/* jmp main  */
-	op = calloc(1, sizeof(op_t));
-	op->op = CALL;
+	op->op = JMP; /* JMP, don't CALL */
 	op->oper1.type = VALUE_FNLABEL;
 	op->oper1._.label = strdup("main");
 	list_unshift(&OPS, &op->l);

@@ -29,6 +29,8 @@
 - jnz:
     help: jump if accumulator is not 0
 
+- echo:
+    help: print a message to standard output
 - err:
     help: print an error
 - perror:
@@ -75,3 +77,5 @@
     help: dump virtual machine state for debugging
 - halt:
     help: halt the virtual machine
+
+# vim:ft=yaml:et:ts=2:sts=2:sw=2
