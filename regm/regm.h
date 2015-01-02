@@ -58,6 +58,13 @@ typedef struct {
 	word_t  *heap;
 } vm_t;
 
+#define HI_NYBLE(_) (((_) >> 4) & 0x0f)
+#define LO_NYBLE(_) ( (_)       & 0x0f)
+#define HI_BYTE(_)  (((_) >> 8) & 0xff);
+#define LO_BYTE(_)  ( (_)       & 0xff);
+#define WORD(a,b) ((a << 8) | (b))
+#define DWORD(a,b,c,d) ((a << 24) | (b << 16) | (c << 8) | (d))
+
 int vm_reset(vm_t *vm);
 int vm_prime(vm_t *vm, byte_t *code, size_t len);
 int vm_exec(vm_t *vm);
