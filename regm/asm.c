@@ -63,7 +63,17 @@ typedef struct {
 	list_t      l;
 } flag_t;
 
+typedef struct {
+	byte_t *mem;
+	size_t  total;
+	size_t  used;
+	size_t  burst;
+	dword_t offset;
+} static_t;
+
 list_t OPS;
+static_t STATIC;
+byte_t *CODE;
 
 
 #define LINE_BUF_SIZE 8192
@@ -282,12 +292,12 @@ static int parse(void)
 	while (lex(&p)) {
 
 		if (!p.value[0])
-			printf("%02x %-14s\n", p.token, T_names[p.token]);
+			fprintf(stderr, "%02x %-14s\n", p.token, T_names[p.token]);
 		else if (p.token == T_OPCODE)
-			printf("%02x %-14s : %#04x (%s)\n", p.token, T_names[p.token],
+			fprintf(stderr, "%02x %-14s : %#04x (%s)\n", p.token, T_names[p.token],
 				p.value[0] & 0xff, ASM[(p.value[0] & 0xff) - T_OPCODE_NOOP]);
 		else
-			printf("%02x %-14s : %s\n", p.token, T_names[p.token], p.value);
+			fprintf(stderr, "%02x %-14s : %s\n", p.token, T_names[p.token], p.value);
 
 		op_t *op = calloc(1, sizeof(op_t));
 		op->fn = FN;
@@ -632,6 +642,39 @@ static int s_resolve(value_t *v, op_t *me)
 	return 0;
 }
 
+hash_t strings;
+static int s_pack(value_t *v)
+{
+	if (v->type == VALUE_STRING) {
+		byte_t *addr = hash_get(&strings, v->_.string);
+		if (!addr) {
+			size_t len = strlen(v->_.string) + 1;
+			if (STATIC.total - STATIC.used < len) {
+				/* FIXME: only works for strings < STATIC.burst */
+				byte_t *mem = realloc(STATIC.mem, STATIC.total + STATIC.burst);
+				if (!mem) perror("realloc");
+
+				STATIC.mem = mem;
+				STATIC.total += STATIC.burst;
+			}
+			memcpy(STATIC.mem + STATIC.used, v->_.string, len);
+			fprintf(stderr, "s_resolve: relocated string %s to %#010x\n",
+				v->_.string, (unsigned)(STATIC.offset + STATIC.used));
+
+			addr = STATIC.mem + STATIC.used;
+			hash_set(&strings, v->_.string, addr);
+			STATIC.used += len;
+		}
+
+		free(v->_.string);
+
+		v->type = VALUE_ADDRESS;
+		v->_.address = STATIC.offset + (addr - STATIC.mem);
+		return 0;
+	}
+	return 0;
+}
+
 static int compile(void)
 {
 	/* phases of compilation:
@@ -642,6 +685,9 @@ static int compile(void)
 	   IV.  encode
 	 */
 
+	memset(&STATIC, 0, sizeof(STATIC));
+	STATIC.burst = 256 * 1024;
+
 	op_t *op;
 	int rc;
 
@@ -650,19 +696,46 @@ static int compile(void)
 	for_each_object(op, &OPS, l) {
 		op->offset = offset;
 		if (op->special) continue;
-		offset += 4;                                   /* 4-byte opcode  */
-		if (op->oper1.type != VALUE_NONE) offset += 8; /* 8-byte operand */
-		if (op->oper2.type != VALUE_NONE) offset += 8; /* 8-byte operand */
+		offset += 2;                                   /* 2-byte opcode  */
+		if (op->oper1.type != VALUE_NONE) offset += 4; /* 4-byte operand */
+		if (op->oper2.type != VALUE_NONE) offset += 4; /* 4-byte operand */
 	}
+	STATIC.offset = offset;
+	CODE = calloc(offset, sizeof(byte_t));
+	byte_t *c = CODE;
 
-	/* phase II: resolve labels */
 	for_each_object(op, &OPS, l) {
 		if (op->special) continue;
+
+		/* phase II: resolve labels */
 		rc = s_resolve(&op->oper1, op);
 		assert(rc == 0);
-
 		rc = s_resolve(&op->oper2, op);
 		assert(rc == 0);
+
+		/* phase III: pack external memory data */
+		rc = s_pack(&op->oper1);
+		assert(rc == 0);
+		rc = s_pack(&op->oper2);
+		assert(rc == 0);
+
+		/* phase IV: encode */
+		*c++ = op->op;
+		*c++ = ((op->oper1.type & 0xff) << 4)
+		     | ((op->oper2.type & 0xff));
+
+		if (op->oper1.type) {
+			*c++ = ((op->oper1._.literal >> 24) & 0xff);
+			*c++ = ((op->oper1._.literal >> 16) & 0xff);
+			*c++ = ((op->oper1._.literal >>  8) & 0xff);
+			*c++ = ((op->oper1._.literal >>  0) & 0xff);
+		}
+		if (op->oper2.type) {
+			*c++ = ((op->oper2._.literal >> 24) & 0xff);
+			*c++ = ((op->oper2._.literal >> 16) & 0xff);
+			*c++ = ((op->oper2._.literal >>  8) & 0xff);
+			*c++ = ((op->oper2._.literal >>  0) & 0xff);
+		}
 	}
 
 	return 0;
@@ -680,27 +753,30 @@ int main(int argc, char **argv)
 
 	op_t *op;
 	for_each_object(op, &OPS, l) {
-		printf("%08x [%04x] %s\n", op->offset, op->op, OPCODES[op->op]);
+		fprintf(stderr, "%08x [%04x] %s\n", op->offset, op->op, OPCODES[op->op]);
 		if (op->oper1.type != VALUE_NONE) {
-			printf("%8s 1: %s (%i)\n", " ", VTYPES[op->oper1.type], op->oper1.type);
+			fprintf(stderr, "%8s 1: %s (%i)\n", " ", VTYPES[op->oper1.type], op->oper1.type);
 			switch (op->oper1.type) {
-			case VALUE_NUMBER:  printf("%11s= %i\n", " ", op->oper1._.literal); break;
-			case VALUE_LABEL:   printf("%11s @%s\n", " ", op->oper1._.label); break;
-			case VALUE_STRING:  printf("%11s \"%s\"\n", " ", op->oper1._.string); break;
-			case VALUE_ADDRESS: printf("%11s %#010x\n", " ", op->oper1._.address); break;
+			case VALUE_NUMBER:  fprintf(stderr, "%11s= %i\n", " ", op->oper1._.literal); break;
+			case VALUE_LABEL:   fprintf(stderr, "%11s @%s\n", " ", op->oper1._.label); break;
+			case VALUE_STRING:  fprintf(stderr, "%11s \"%s\"\n", " ", op->oper1._.string); break;
+			case VALUE_ADDRESS: fprintf(stderr, "%11s %#010x\n", " ", op->oper1._.address); break;
 			}
 		}
 		if (op->oper2.type != VALUE_NONE) {
-			printf("%8s 2: %s (%i)\n", " ", VTYPES[op->oper2.type], op->oper2.type);
+			fprintf(stderr, "%8s 2: %s (%i)\n", " ", VTYPES[op->oper2.type], op->oper2.type);
 			switch (op->oper2.type) {
-			case VALUE_NUMBER:  printf("%11s= %i\n", " ", op->oper2._.literal); break;
-			case VALUE_LABEL:   printf("%11s @%s\n", " ", op->oper2._.label); break;
-			case VALUE_STRING:  printf("%11s \"%s\"\n", " ", op->oper2._.string); break;
-			case VALUE_ADDRESS: printf("%11s %0#10x\n", " ", op->oper2._.address); break;
+			case VALUE_NUMBER:  fprintf(stderr, "%11s= %i\n", " ", op->oper2._.literal); break;
+			case VALUE_LABEL:   fprintf(stderr, "%11s @%s\n", " ", op->oper2._.label); break;
+			case VALUE_STRING:  fprintf(stderr, "%11s \"%s\"\n", " ", op->oper2._.string); break;
+			case VALUE_ADDRESS: fprintf(stderr, "%11s %0#10x\n", " ", op->oper2._.address); break;
 			}
 		}
-		printf("\n");
+		fprintf(stderr, "\n");
 	}
+
+	write(1, CODE, STATIC.offset);
+	write(1, STATIC.mem, STATIC.used);
 
 	return 0;
 }
