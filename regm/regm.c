@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/mman.h>
+#include <errno.h>
 
 #include "opcodes.h"
 
@@ -213,7 +214,6 @@ int vm_exec(vm_t *vm)
 			ARG1("call");
 			if (!is_address(f1))
 				B_ERR("call requires an address for operand 1");
-			printf("call (%08x)\n", oper1);
 
 			save_state(vm);
 			push(&vm->istack, vm->pc);
@@ -223,10 +223,9 @@ int vm_exec(vm_t *vm)
 		case RET:
 			if (f1) {
 				ARG1("ret");
-				printf("ret (%08x)\n", oper1);
+				vm->acc = value_of(vm, f1, oper1);
 			} else {
 				ARG0("ret");
-				printf("ret\n");
 			}
 			if (empty(&vm->istack))
 				return 0; /* last RET == HALT */
@@ -236,45 +235,49 @@ int vm_exec(vm_t *vm)
 
 		case CMP:
 			ARG2("cmp");
-			printf("cmp (%08x) (%08x)\n", oper1, oper2);
+			vm->acc = value_of(vm, f1, oper1) - value_of(vm, f2, oper2);
 			break;
 
 		case STRCMP:
 			ARG2("strcmp");
-			printf("strcmp (%08x) (%08x)\n", oper1, oper2);
+			vm->acc = strcmp(
+				(char *)(vm->code + value_of(vm, f1, oper1)),
+				(char *)(vm->code + value_of(vm, f1, oper2)));
 			break;
 
 		case JMP:
 			ARG1("jmp");
-			printf("jmp (%08x)\n", oper1);
 			vm->pc = oper1;
 			break;
 
 		case JZ:
 			ARG1("jz");
-			printf("jz (%08x)\n", oper1);
+			if (vm->acc == 0) vm->pc = value_of(vm, f1, oper1);
 			break;
 
 		case JNZ:
 			ARG1("jnz");
-			printf("jnz (%08x)\n", oper1);
+			if (vm->acc != 0) vm->pc = value_of(vm, f1, oper1);
 			break;
 
 		case ECHO:
 			ARG1("echo");
-			printf("echo (%08x)\n", oper1);
 			printf((char *)(vm->code + value_of(vm, f1, oper1)),
 				vm->r[0], vm->r[1], vm->r[2], vm->r[3], vm->r[4], vm->r[5]);
 			break;
 
 		case ERR:
 			ARG1("err");
-			printf("err (%08x)\n", oper1);
+			fprintf(stderr, (char *)(vm->code + value_of(vm, f1, oper1)),
+				vm->r[0], vm->r[1], vm->r[2], vm->r[3], vm->r[4], vm->r[5]);
+			fprintf(stderr, "\n");
 			break;
 
 		case PERROR:
 			ARG1("perror");
-			printf("perror (%08x)\n", oper1);
+			fprintf(stderr, (char *)(vm->code + value_of(vm, f1, oper1)),
+				vm->r[0], vm->r[1], vm->r[2], vm->r[3], vm->r[4], vm->r[5]);
+			fprintf(stderr, ": %s\n", strerror(errno));
 			break;
 
 		case BAIL:
@@ -345,12 +348,10 @@ int vm_exec(vm_t *vm)
 
 		case HALT:
 			ARG0("halt");
-			printf("halt\n");
 			return 0;
 
 		case DUMP:
 			ARG0("dump");
-			printf("dump\n");
 			dump(stderr, vm);
 			break;
 
