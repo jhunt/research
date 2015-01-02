@@ -53,9 +53,6 @@ typedef struct {
 
 	size_t   codesize;
 	byte_t  *code;
-
-	size_t   heapsize;
-	word_t  *heap;
 } vm_t;
 
 #define HI_NYBLE(_) (((_) >> 4) & 0x0f)
@@ -71,5 +68,6 @@ int vm_exec(vm_t *vm);
 
 int push(stack_t *st, dword_t value);
 dword_t pop(stack_t *st);
+int empty(stack_t *st);
 
 #endif

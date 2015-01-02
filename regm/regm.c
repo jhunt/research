@@ -11,6 +11,58 @@
 
 #include "opcodes.h"
 
+static void save_state(vm_t *vm)
+{
+	int i;
+	for (i = 0; i < NREGS; i++)
+		push(&vm->dstack, vm->r[i]);
+}
+
+static void restore_state(vm_t *vm)
+{
+	int i;
+	for (i = NREGS - 1; i >= 0; i--)
+		vm->r[i] = pop(&vm->dstack);
+}
+
+static void dump(FILE *io, vm_t *vm)
+{
+	fprintf(io, "\n");
+	fprintf(io, "    ---------------------------------------------------------------------\n");
+	fprintf(io, "    %%%c [ %08x ]   %%%c [ %08x ]   %%%c [ %08x ]   %%%c [ %08x ]\n",
+		'a', vm->r[0],  'b', vm->r[1], 'c', vm->r[2],  'd', vm->r[3]);
+	fprintf(io, "    %%%c [ %08x ]   %%%c [ %08x ]   %%%c [ %08x ]   %%%c [ %08x ]\n",
+		'e', vm->r[4],  'f', vm->r[5], 'g', vm->r[6],  'h', vm->r[7]);
+	fprintf(io, "    %%%c [ %08x ]   %%%c [ %08x ]   %%%c [ %08x ]   %%%c [ %08x ]\n",
+		'i', vm->r[8],  'j', vm->r[9], 'k', vm->r[10], 'l', vm->r[11]);
+	fprintf(io, "    %%%c [ %08x ]   %%%c [ %08x ]   %%%c [ %08x ]   %%%c [ %08x ]\n",
+		'm', vm->r[12], 'n', vm->r[13], 'o', vm->r[14], 'p', vm->r[15]);
+	fprintf(io, "\n");
+
+	fprintf(io, "    acc: %08x\n", vm->acc);
+	fprintf(io, "     pc: %08x\n", vm->pc);
+	fprintf(io, "\n");
+
+	int i;
+	if (vm->dstack.top == 0) {
+		fprintf(io, "    data stack: <empty>\n");
+	} else {
+		fprintf(io, "    data stack: | %04x | 0\n", vm->dstack.val[0]);
+		for (i = 1; i < vm->dstack.top; i++)
+			fprintf(io, "                | %04x | %i\n", vm->dstack.val[i], i);
+	}
+
+	if (vm->istack.top == 0) {
+		fprintf(io, "    inst stack: <empty>\n");
+	} else {
+		fprintf(io, "    inst stack: | %04x | 0\n", vm->istack.val[0]);
+		for (i = 1; i < vm->istack.top; i++)
+			fprintf(io, "                | %04x | %i\n", vm->istack.val[i], i);
+	}
+
+	fprintf(io, "    ---------------------------------------------------------------------\n\n");
+}
+
 int vm_reset(vm_t *vm)
 {
 	assert(vm);
@@ -56,9 +108,9 @@ dword_t value_of(vm_t *vm, byte_t type, dword_t arg)
 		return arg;
 
 	case TYPE_ADDRESS:
-		if (arg >= vm->heapsize)
+		if (arg >= vm->codesize)
 			return BADVALUE;
-		return vm->heap[arg];
+		return arg;
 
 	case TYPE_REGISTER:
 		if (arg > NREGS) {
@@ -146,7 +198,7 @@ int vm_exec(vm_t *vm)
 		case SWAP:
 			ARG2("swap");
 			if (!is_register(f1))
-				B_ERR("requires a register index for operand 1");
+				B_ERR("swap requires a register index for operand 1");
 			if (oper1 > NREGS)
 				B_ERR("register %08x is out of bounds", oper1);
 
@@ -159,7 +211,13 @@ int vm_exec(vm_t *vm)
 
 		case CALL:
 			ARG1("call");
+			if (!is_address(f1))
+				B_ERR("call requires an address for operand 1");
 			printf("call (%08x)\n", oper1);
+
+			save_state(vm);
+			push(&vm->istack, vm->pc);
+			vm->pc = oper1;
 			break;
 
 		case RET:
@@ -170,6 +228,10 @@ int vm_exec(vm_t *vm)
 				ARG0("ret");
 				printf("ret\n");
 			}
+			if (empty(&vm->istack))
+				return 0; /* last RET == HALT */
+			vm->pc = pop(&vm->istack);
+			restore_state(vm);
 			break;
 
 		case CMP:
@@ -185,6 +247,7 @@ int vm_exec(vm_t *vm)
 		case JMP:
 			ARG1("jmp");
 			printf("jmp (%08x)\n", oper1);
+			vm->pc = oper1;
 			break;
 
 		case JZ:
@@ -195,6 +258,13 @@ int vm_exec(vm_t *vm)
 		case JNZ:
 			ARG1("jnz");
 			printf("jnz (%08x)\n", oper1);
+			break;
+
+		case ECHO:
+			ARG1("echo");
+			printf("echo (%08x)\n", oper1);
+			printf((char *)(vm->code + value_of(vm, f1, oper1)),
+				vm->r[0], vm->r[1], vm->r[2], vm->r[3], vm->r[4], vm->r[5]);
 			break;
 
 		case ERR:
@@ -281,29 +351,7 @@ int vm_exec(vm_t *vm)
 		case DUMP:
 			ARG0("dump");
 			printf("dump\n");
-
-			fprintf(stderr, "\n");
-			fprintf(stderr, "    ---------------------------------------------------------------------\n");
-			fprintf(stderr, "    %%%c [ %08x ]   %%%c [ %08x ]   %%%c [ %08x ]   %%%c [ %08x ]\n",
-				'a', vm->r[0],  'b', vm->r[1], 'c', vm->r[2],  'd', vm->r[3]);
-			fprintf(stderr, "    %%%c [ %08x ]   %%%c [ %08x ]   %%%c [ %08x ]   %%%c [ %08x ]\n",
-				'e', vm->r[4],  'f', vm->r[5], 'g', vm->r[6],  'h', vm->r[7]);
-			fprintf(stderr, "    %%%c [ %08x ]   %%%c [ %08x ]   %%%c [ %08x ]   %%%c [ %08x ]\n",
-				'i', vm->r[8],  'j', vm->r[9], 'k', vm->r[10], 'l', vm->r[11]);
-			fprintf(stderr, "    %%%c [ %08x ]   %%%c [ %08x ]   %%%c [ %08x ]   %%%c [ %08x ]\n",
-				'm', vm->r[12], 'n', vm->r[13], 'o', vm->r[14], 'p', vm->r[15]);
-			fprintf(stderr, "\n");
-
-			fprintf(stderr, "    acc: %08x\n", vm->acc);
-			fprintf(stderr, "     pc: %08x\n", vm->pc);
-			fprintf(stderr, "\n");
-
-			fprintf(stderr, "    data stack: | %04x | 0\n", vm->dstack.val[0]);
-			int i;
-			for (i = 1; i < vm->dstack.top; i++)
-				fprintf(stderr, "                | %04x | %i\n", vm->dstack.val[i], i);
-
-			fprintf(stderr, "    ---------------------------------------------------------------------\n\n");
+			dump(stderr, vm);
 			break;
 
 
@@ -313,6 +361,11 @@ int vm_exec(vm_t *vm)
 			return -1;
 		}
 	}
+}
+
+int empty(stack_t *st)
+{
+	return st->top == 0;
 }
 
 int push(stack_t *st, dword_t value)
@@ -330,15 +383,13 @@ int push(stack_t *st, dword_t value)
 dword_t pop(stack_t *st)
 {
 	assert(st);
-	if (st->top == 0) {
+	if (empty(st)) {
 		fprintf(stderr, "stack underflow!\n");
 		abort();
 	}
 
-	return st->val[st->top--];
+	return st->val[--st->top];
 }
-
-
 
 int main (int argc, char **argv)
 {
