@@ -27,10 +27,16 @@ static const char * VTYPES[] = {
 #define VALUE_STRING    0x3
 #define VALUE_ADDRESS   0x4
 #define VALUE_LABEL     0x5
-#define VALUE_OFFSET    0x6
-#define VALUE_FNLABEL   0x7
+#define VALUE_FNLABEL   0x6
+#define VALUE_OFFSET    0x7
+
+#define TYPE_LITERAL   0x1
+#define TYPE_REGISTER  0x2
+#define TYPE_ADDRESS   0x3
+
 typedef struct {
 	byte_t type;
+	byte_t bintype;
 	union {
 		char     regname;   /* register (a, c, etc.) */
 		dword_t  literal;   /* literal value         */
@@ -358,7 +364,7 @@ static int parse(void)
 				break;
 
 			case T_OPCODE_SWAP:
-				op->op = SET;
+				op->op = SWAP;
 				NEXT;
 				if (p.token != T_REGISTER)
 					ERROR("non-register operand given to swap opcode");
@@ -395,7 +401,7 @@ static int parse(void)
 				break;
 
 			case T_OPCODE_CMP:
-				op->op = RET;
+				op->op = CMP;
 				NEXT;
 				switch (p.token) {
 				case T_REGISTER: OPERAND_REGISTER(oper1); break;
@@ -446,7 +452,7 @@ static int parse(void)
 				case T_IDENTIFIER: OPERAND_LABEL(oper1);  break;
 				case T_OFFSET:     OPERAND_OFFSET(oper1); break;
 				default:
-					ERROR("non-label operand given to jz opcode");
+					ERROR("non-label operand given to jmp opcode");
 				}
 				break;
 
@@ -468,7 +474,7 @@ static int parse(void)
 				case T_IDENTIFIER: OPERAND_LABEL(oper1);  break;
 				case T_OFFSET:     OPERAND_OFFSET(oper1); break;
 				default:
-					ERROR("non-label operand given to jz opcode");
+					ERROR("non-label operand given to jnz opcode");
 				}
 				break;
 
@@ -511,62 +517,75 @@ static int parse(void)
 				break;
 
 			case T_OPCODE_ISLINK:
+				op->op = ISLINK;
 				NEXT;
 				break;
 
 			case T_OPCODE_ISDIR:
+				op->op = ISDIR;
 				NEXT;
 				break;
 
 			case T_OPCODE_TOUCH:
+				op->op = TOUCH;
 				NEXT;
 				break;
 
 			case T_OPCODE_UNLINK:
+				op->op = UNLINK;
 				NEXT;
 				break;
 
 			case T_OPCODE_RENAME:
+				op->op = RENAME;
 				NEXT;
 				NEXT;
 				break;
 
 			case T_OPCODE_CHOWN:
+				op->op = CHOWN;
 				NEXT;
 				NEXT;
 				break;
 
 			case T_OPCODE_CHGRP:
+				op->op = CHGRP;
 				NEXT;
 				NEXT;
 				break;
 
 			case T_OPCODE_CHMOD:
+				op->op = CHMOD;
 				NEXT;
 				NEXT;
 				break;
 
 			case T_OPCODE_FSHA1:
+				op->op = FSHA1;
 				NEXT;
 				NEXT;
 				break;
 
 			case T_OPCODE_GETFILE:
+				op->op = GETFILE;
 				NEXT;
 				NEXT;
 				break;
 
 			case T_OPCODE_GETUID:
+				op->op = GETUID;
 				NEXT;
 				NEXT;
 				break;
 
 			case T_OPCODE_GETGID:
+				op->op = GETGID;
 				NEXT;
 				NEXT;
 				break;
 
 			case T_OPCODE_EXEC:
+				op->op = EXEC;
 				NEXT;
 				NEXT;
 				break;
@@ -593,62 +612,27 @@ bail:
 	return 1;
 }
 
+hash_t strings;
 static int s_resolve(value_t *v, op_t *me)
 {
-	if (v->type == VALUE_LABEL) {
-		op_t *op, *fn = (op_t*)me->fn;
-		for_each_object(op, &fn->l, l) {
-			if (op->special == SPECIAL_FUNC) break;
-			if (op->special != SPECIAL_LABEL) continue;
-			if (strcmp(v->_.label, op->label) != 0) continue;
+	byte_t *addr;
+	size_t len;
+	op_t *op, *fn;
 
-			free(v->_.label);
-			v->type = VALUE_ADDRESS;
-			v->_.address = op->offset;
-			return 0;
-		}
-		logger(LOG_ERR, "label %s not found in scope!", v->_.label);
-		return 1;
-	}
+	switch (v->type) {
+	case VALUE_REGISTER:
+		v->bintype = TYPE_REGISTER;
+		v->_.literal -= 'a';
+		return 0;
 
-	if (v->type == VALUE_FNLABEL) {
-		op_t *op;
-		for_each_object(op, &me->l, l) {
-			if (op->special != SPECIAL_FUNC) continue;
-			if (strcmp(v->_.fnlabel, op->label) != 0) continue;
+	case VALUE_NUMBER:
+		v->bintype = TYPE_LITERAL;
+		return 0;
 
-			free(v->_.fnlabel);
-			v->type = VALUE_ADDRESS;
-			v->_.address = op->offset;
-			return 0;
-		}
-		logger(LOG_ERR, "fnlabel %s not found globally!", v->_.fnlabel);
-		return 1;
-	}
-
-	if (v->type == VALUE_OFFSET) {
-		op_t *op;
-		for_each_object(op, &me->l, l) {
-			if (op->special) continue;
-			if (v->_.offset--) continue;
-
-			v->type = VALUE_ADDRESS;
-			v->_.address = op->offset;
-			return 0;
-		}
-		return 1;
-	}
-
-	return 0;
-}
-
-hash_t strings;
-static int s_pack(value_t *v)
-{
-	if (v->type == VALUE_STRING) {
-		byte_t *addr = hash_get(&strings, v->_.string);
+	case VALUE_STRING:
+		addr = hash_get(&strings, v->_.string);
 		if (!addr) {
-			size_t len = strlen(v->_.string) + 1;
+			len = strlen(v->_.string) + 1;
 			if (STATIC.total - STATIC.used < len) {
 				/* FIXME: only works for strings < STATIC.burst */
 				byte_t *mem = realloc(STATIC.mem, STATIC.total + STATIC.burst);
@@ -669,8 +653,55 @@ static int s_pack(value_t *v)
 		free(v->_.string);
 
 		v->type = VALUE_ADDRESS;
+		v->bintype = TYPE_ADDRESS;
 		v->_.address = STATIC.offset + (addr - STATIC.mem);
 		return 0;
+
+	case VALUE_ADDRESS:
+		v->bintype = TYPE_ADDRESS;
+		return 0;
+
+	case VALUE_LABEL:
+		fn = (op_t*)me->fn;
+		for_each_object(op, &fn->l, l) {
+			if (op->special == SPECIAL_FUNC) break;
+			if (op->special != SPECIAL_LABEL) continue;
+			if (strcmp(v->_.label, op->label) != 0) continue;
+
+			free(v->_.label);
+			v->type = VALUE_ADDRESS;
+			v->bintype = TYPE_ADDRESS;
+			v->_.address = op->offset;
+			return 0;
+		}
+		logger(LOG_ERR, "label %s not found in scope!", v->_.label);
+		return 1;
+
+	case VALUE_FNLABEL:
+		for_each_object(op, &me->l, l) {
+			if (op->special != SPECIAL_FUNC) continue;
+			if (strcmp(v->_.fnlabel, op->label) != 0) continue;
+
+			free(v->_.fnlabel);
+			v->type = VALUE_ADDRESS;
+			v->bintype = TYPE_ADDRESS;
+			v->_.address = op->offset;
+			return 0;
+		}
+		logger(LOG_ERR, "fnlabel %s not found globally!", v->_.fnlabel);
+		return 1;
+
+	case VALUE_OFFSET:
+		for_each_object(op, &me->l, l) {
+			if (op->special) continue;
+			if (v->_.offset--) continue;
+
+			v->type = VALUE_ADDRESS;
+			v->bintype = TYPE_ADDRESS;
+			v->_.address = op->offset;
+			return 0;
+		}
+		return 1;
 	}
 	return 0;
 }
@@ -691,6 +722,11 @@ static int compile(void)
 	op_t *op;
 	int rc;
 
+	/* sneakily insert a HALT instruction at the end */
+	op = calloc(1, sizeof(op_t));
+	op->op = HALT;
+	list_push(&OPS, &op->l);
+
 	/* phase I: calculate offsets */
 	dword_t offset = 0;
 	for_each_object(op, &OPS, l) {
@@ -707,22 +743,16 @@ static int compile(void)
 	for_each_object(op, &OPS, l) {
 		if (op->special) continue;
 
-		/* phase II: resolve labels */
+		/* phase II/III: resolve labels / pack strings */
 		rc = s_resolve(&op->oper1, op);
 		assert(rc == 0);
 		rc = s_resolve(&op->oper2, op);
 		assert(rc == 0);
 
-		/* phase III: pack external memory data */
-		rc = s_pack(&op->oper1);
-		assert(rc == 0);
-		rc = s_pack(&op->oper2);
-		assert(rc == 0);
-
 		/* phase IV: encode */
 		*c++ = op->op;
-		*c++ = ((op->oper1.type & 0xff) << 4)
-		     | ((op->oper2.type & 0xff));
+		*c++ = ((op->oper1.bintype & 0xff) << 4)
+		     | ((op->oper2.bintype & 0xff));
 
 		if (op->oper1.type) {
 			*c++ = ((op->oper1._.literal >> 24) & 0xff);
