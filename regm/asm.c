@@ -710,10 +710,11 @@ static int compile(void)
 {
 	/* phases of compilation:
 
-	   I.   determine offset of each opcode
-	   II.  resolve labels / relative addresses
-	   III. pack 'external memory' data
-	   IV.  encode
+	   I.   insert runtime at addr 0
+	   II.  determine offset of each opcode
+	   III. resolve labels / relative addresses
+	   IV.  pack 'external memory' data
+	   V.   encode
 	 */
 
 	memset(&STATIC, 0, sizeof(STATIC));
@@ -722,12 +723,21 @@ static int compile(void)
 	op_t *op;
 	int rc;
 
-	/* sneakily insert a HALT instruction at the end */
+	/* phase I: runtime insertion */
+
+	/* halt */
 	op = calloc(1, sizeof(op_t));
 	op->op = HALT;
-	list_push(&OPS, &op->l);
+	list_unshift(&OPS, &op->l);
 
-	/* phase I: calculate offsets */
+	/* jmp main  */
+	op = calloc(1, sizeof(op_t));
+	op->op = CALL;
+	op->oper1.type = VALUE_FNLABEL;
+	op->oper1._.label = strdup("main");
+	list_unshift(&OPS, &op->l);
+
+	/* phase II: calculate offsets */
 	dword_t offset = 0;
 	for_each_object(op, &OPS, l) {
 		op->offset = offset;
