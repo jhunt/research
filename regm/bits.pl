@@ -12,27 +12,49 @@ my $lst = eval { LoadFile "opcodes.yml" }
 my $n = 0;
 my $len = 0;
 for my $op (@$lst) {
-	my ($key, $help) = %$op;
+	my ($key, $o) = %$op;
 	$len = max($len, length($key));
 	$n++;
 }
-my $digits = int(log($n) / log(16)) + 3;
 
 $n = 0;
-print "/** OPCODES CONSTANTS **/\n";
+print "/** OPCODE CONSTANTS **/\n";
 for my $op (@$lst) {
-	my ($key, $help) = %$op;
-	printf "#define %-${len}s  %#0${digits}x  /* %s */\n", uc($key), $n++, $help;
+	my ($key, $o) = %$op;
+	next if $o->{sugar};
+	printf "#define %-${len}s  %#04x  /* %s */\n", uc($key), $n++, $o->{help};
 }
 
 print "\n\n";
+print "#ifdef OPCODES_EXTENDED\n";
 print "/** OPCODE MNEMONIC NAMES **/\n";
 print "static const char * OPCODES[] = {\n";
 $n = 0;
 for my $op (@$lst) {
-	my ($key, $help) = %$op;
-	printf qq(\t%-@{[$len+3]}s /* %-${len}s  %@{[$digits-2]}i  %#0${digits}x */\n), qq("$key",), uc($key), $n, $n;
+	my ($key, $o) = %$op;
+	next if $o->{sugar};
+	printf qq(\t%-@{[$len+3]}s /* %-${len}s  %2i  %#04x */\n), qq("$key",), uc($key), $n, $n;
 	$n++;
 }
 print "\tNULL,\n";
 print "};\n";
+
+print "\n\n";
+print "/** ASM TOKENS **/\n";
+$n = 0x40;
+for my $op (@$lst) {
+	my ($key, $o) = %$op;
+	printf "#define T_OPCODE_%-${len}s  %#04x  /* %s */\n", uc($key), $n++, $o->{help};
+}
+
+print "\n\n";
+print "static const char * ASM[] = {\n";
+$n = 0;
+for my $op (@$lst) {
+	my ($key, $o) = %$op;
+	printf qq(\t%-@{[$len+3]}s /* T_OPCODE_%-${len}s  %2i  %#04x */\n), qq("$key",), uc($key), $n, $n;
+	$n++;
+}
+print "\tNULL,\n";
+print "};\n";
+print "#endif\n";

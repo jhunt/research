@@ -1,34 +1,77 @@
-- noop:   does nothing
-- push:   push a register onto data stack
-- pop:    pop data stack top into a register
-- set:    set register value
-- swap:   swap two register values
+- noop:
+    help: does nothing
+- push:
+    help: push a register onto data stack
+- pop:
+    help: pop data stack top into a register
+- set:
+    help: set register value
+- swap:
+    help: swap two register values
 
-- call:   call a user-defined function
-- ret:    return to caller
+- call:
+    help: call a user-defined function
+- ret:
+    help: return to caller
+- retv:
+    help: return to caller (with value)
+    sugar: yes
 
-- cmp:    compare two integers
-- strcmp: compare two strings
+- cmp:
+    help: compare two integers
+- strcmp:
+    help: compare two strings
 
-- jmp:    unconditional jump
-- jz:     jump if accumulator is 0
-- jnz:    jump if accumulator is not 0
+- jmp:
+    help: unconditional jump
+- jz:
+    help: jump if accumulator is 0
+- jnz:
+    help: jump if accumulator is not 0
 
-- err:    print an error
-- perror: print an error (with system error message)
-- bail:   ...
+- err:
+    help: print an error
+- perror:
+    help: print an error (with system error message)
+- bail:
+    help: ...
+- mark:
+    help: ...
 
-- fstat:  check to see if a file exists
-- isfile: is a path a regular file?
-- islink: is a path a symbolic link?
-- isdir:  is a path a directory?
-- touch:  touch a file (create or update its utime)
-- unlink: remove a file
-- rename: rename a file
-- chown:  change file ownership
-- chgrp:  change file group ownership
-- chmod:  change file permissions
-- fsha1:  calculate SHA1 of a file's contents
+- fstat:
+    help: check to see if a file exists
+- isfile:
+    help: is a path a regular file?
+- islink:
+    help: is a path a symbolic link?
+- isdir:
+    help: is a path a directory?
+- touch:
+    help: touch a file (create or update its utime)
+- unlink:
+    help: remove a file
+- rename:
+    help: rename a file
+- chown:
+    help: change file ownership
+- chgrp:
+    help: change file group ownership
+- chmod:
+    help: change file permissions
+- fsha1:
+    help: calculate SHA1 of a file's contents
+- getfile:
+    help: retrieve a file from the server
 
-- dump:   dump virtual machine state for debugging
-- halt:   halt the virtual machine
+- getuid:
+    help: look up a user's UID, by name
+- getgid:
+    help: look up a group's GID, by name
+
+- exec:
+    help: execute a command
+
+- dump:
+    help: dump virtual machine state for debugging
+- halt:
+    help: halt the virtual machine
