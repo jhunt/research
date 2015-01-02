@@ -4,38 +4,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-/* OPERANDS */
-#define NOOP  0 /* does nothing                - noop      */
-#define PUSH  1 /* push a register onto stack  - push %a   */
-#define POP   2 /* pop stack top into register - pop %a    */
-#define SET   3 /* set register value          - set %a $v */
-#define CALL  4 /* call function               - call [fn] */
-#define RET   5 /* return from function        - ret       */
-#define CMP   6 /* compare integers            - cmp %a %b */
-#define JZ    7 /* jump if accumulator == 0    - jz @addr  */
-#define JNZ   8 /* jump if accumulator != 0    - jnz @addr */
-#define JMP   9 /* unconditional jump          - jmp @addr */
-#define HALT 10 /* halt the virtual machine    - halt      */
-#define DUMP 11 /* dump internal vm state      - dump      */
-
-#define T_LITERAL  0x1
-#define T_REGISTER 0x2
-#define T_ADDRESS  0x3
-
-static const char *OP_NAMES[] = {
-	"noop",
-	"push",
-	"pop",
-	"set",
-	"call",
-	"ret",
-	"cmp",
-	"jz",
-	"jnz",
-	"halt",
-	"dump",
-	NULL,
-};
+#include "opcodes.h"
 
 int vm_reset(vm_t *vm)
 {
@@ -73,23 +42,27 @@ int vm_prime(vm_t *vm, byte_t *code, size_t len)
 #define ARG1(s) do { if (!f1 ||  f2) B_ERR(s " requires exactly one operand"); } while (0)
 #define ARG2(s) do { if (!f1 || !f2) B_ERR(s " requires two operands");        } while (0)
 
-#define is_value(fl)    ((fl) == T_LITERAL)
-#define is_address(fl)  ((fl) == T_ADDRESS)
-#define is_register(fl) ((fl) == T_REGISTER)
+#define TYPE_LITERAL  0x1
+#define TYPE_REGISTER 0x2
+#define TYPE_ADDRESS  0x3
+
+#define is_value(fl)    ((fl) == TYPE_LITERAL)
+#define is_address(fl)  ((fl) == TYPE_ADDRESS)
+#define is_register(fl) ((fl) == TYPE_REGISTER)
 
 #define BADVALUE 0xffffffff
 dword_t value_of(vm_t *vm, byte_t type, dword_t arg)
 {
 	switch (type) {
-	case T_LITERAL:
+	case TYPE_LITERAL:
 		return arg;
 
-	case T_ADDRESS:
+	case TYPE_ADDRESS:
 		if (arg >= vm->heapsize)
 			return BADVALUE;
 		return vm->heap[arg];
 
-	case T_REGISTER:
+	case TYPE_REGISTER:
 		if (arg > NREGS) {
 			return BADVALUE;
 		}
@@ -104,6 +77,7 @@ int vm_exec(vm_t *vm)
 {
 	byte_t op, f1, f2;
 	dword_t oper1, oper2;
+	vm->pc = 0;
 
 	for (;;) {
 		oper1 = oper2 = 0;
@@ -118,17 +92,19 @@ int vm_exec(vm_t *vm)
 			B_ERR("corrupt operands mask detected; f1=%02x, f2=%02x", f1, f2);
 
 		if (f1) {
-			oper1 = DWORD(vm->code[vm->pc++],
-			              vm->code[vm->pc++],
-			              vm->code[vm->pc++],
-			              vm->code[vm->pc++]);
+			oper1 = DWORD(vm->code[vm->pc + 0],
+			              vm->code[vm->pc + 1],
+			              vm->code[vm->pc + 2],
+			              vm->code[vm->pc + 3]);
+			vm->pc += 4;
 		}
 
 		if (f2) {
-			oper2 = DWORD(vm->code[vm->pc++],
-			              vm->code[vm->pc++],
-			              vm->code[vm->pc++],
-			              vm->code[vm->pc++]);
+			oper2 = DWORD(vm->code[vm->pc + 0],
+			              vm->code[vm->pc + 1],
+			              vm->code[vm->pc + 2],
+			              vm->code[vm->pc + 3]);
+			vm->pc += 4;
 		}
 
 		switch (op) {
@@ -225,7 +201,8 @@ int vm_exec(vm_t *vm)
 			fprintf(stderr, "\n");
 
 			fprintf(stderr, "    data stack: | %04x | 0\n", vm->dstack.val[0]);
-			for (int i = 1; i < vm->dstack.top; i++)
+			int i;
+			for (i = 1; i < vm->dstack.top; i++)
 				fprintf(stderr, "                | %04x | %i\n", vm->dstack.val[i], i);
 
 			fprintf(stderr, "    ---------------------------------------------------------------------\n\n");
