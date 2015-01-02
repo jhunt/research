@@ -1,0 +1,34 @@
+- noop:   does nothing
+- push:   push a register onto data stack
+- pop:    pop data stack top into a register
+- set:    set register value
+- swap:   swap two register values
+
+- call:   call a user-defined function
+- ret:    return to caller
+
+- cmp:    compare two integers
+- strcmp: compare two strings
+
+- jmp:    unconditional jump
+- jz:     jump if accumulator is 0
+- jnz:    jump if accumulator is not 0
+
+- err:    print an error
+- perror: print an error (with system error message)
+- bail:   ...
+
+- fstat:  check to see if a file exists
+- isfile: is a path a regular file?
+- islink: is a path a symbolic link?
+- isdir:  is a path a directory?
+- touch:  touch a file (create or update its utime)
+- unlink: remove a file
+- rename: rename a file
+- chown:  change file ownership
+- chgrp:  change file group ownership
+- chmod:  change file permissions
+- fsha1:  calculate SHA1 of a file's contents
+
+- dump:   dump virtual machine state for debugging
+- halt:   halt the virtual machine
