@@ -101,6 +101,20 @@ int vm_prime(vm_t *vm, byte_t *code, size_t len)
 #define is_address(fl)  ((fl) == TYPE_ADDRESS)
 #define is_register(fl) ((fl) == TYPE_REGISTER)
 
+const char *stringv(vm_t *vm, byte_t type, dword_t arg)
+{
+	switch (type) {
+	case TYPE_ADDRESS:
+		if (arg >= vm->codesize) return NULL;
+		return (char *)((uintptr_t)vm->code + arg);
+
+	case TYPE_REGISTER:
+		if (arg > NREGS) return NULL;
+		return (char *)((uintptr_t)vm->code + vm->r[arg]);
+
+	default: return NULL;
+	}
+}
 #define BADVALUE 0xffffffff
 dword_t value_of(vm_t *vm, byte_t type, dword_t arg)
 {
@@ -109,14 +123,11 @@ dword_t value_of(vm_t *vm, byte_t type, dword_t arg)
 		return arg;
 
 	case TYPE_ADDRESS:
-		if (arg >= vm->codesize)
-			return BADVALUE;
+		if (arg >= vm->codesize) return BADVALUE;
 		return arg;
 
 	case TYPE_REGISTER:
-		if (arg > NREGS) {
-			return BADVALUE;
-		}
+		if (arg > NREGS) return BADVALUE;
 		return vm->r[arg];
 
 	default:
@@ -290,9 +301,7 @@ int vm_exec(vm_t *vm)
 
 		case STRCMP:
 			ARG2("strcmp");
-			vm->acc = strcmp(
-				(char *)(vm->code + value_of(vm, f1, oper1)),
-				(char *)(vm->code + value_of(vm, f1, oper2)));
+			vm->acc = strcmp(stringv(vm, f1, oper1), stringv(vm, f1, oper2));
 			break;
 
 		case JMP:
@@ -312,22 +321,22 @@ int vm_exec(vm_t *vm)
 
 		case ECHO:
 			ARG1("echo");
-			printf((char *)(vm->code + value_of(vm, f1, oper1)),
+			printf(stringv(vm, f1, oper1),
 				vm->r[0], vm->r[1], vm->r[2], vm->r[3], vm->r[4], vm->r[5]);
 			break;
 
 		case ERR:
 			ARG1("err");
-			fprintf(stderr, (char *)(vm->code + value_of(vm, f1, oper1)),
+			fprintf(stderr, stringv(vm, f1, oper1),
 				vm->r[0], vm->r[1], vm->r[2], vm->r[3], vm->r[4], vm->r[5]);
 			fprintf(stderr, "\n");
 			break;
 
 		case PERROR:
 			ARG1("perror");
-			fprintf(stderr, (char *)(vm->code + value_of(vm, f1, oper1)),
+			fprintf(stderr, stringv(vm, f1, oper1),
 				vm->r[0], vm->r[1], vm->r[2], vm->r[3], vm->r[4], vm->r[5]);
-			fprintf(stderr, ": %s\n", strerror(errno));
+			fprintf(stderr, ": (%i) %s\n", errno, strerror(errno));
 			break;
 
 		case BAIL:
