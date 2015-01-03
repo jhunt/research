@@ -40,28 +40,56 @@
 - mark:
     help: ...
 
-- fstat:
+- fs.stat:
     help: check to see if a file exists
-- isfile:
+- fs.file?:
     help: is a path a regular file?
-- islink:
+- fs.symlink?:
     help: is a path a symbolic link?
-- isdir:
+- fs.dir?:
     help: is a path a directory?
-- touch:
+- fs.chardev?:
+    help: is a path a character device?
+- fs.blockdev?:
+    help: is a path a block device?
+- fs.fifo?:
+    help: is a path a FIFO queue?
+- fs.socket?:
+    help: is a path a socket?
+- fs.readlink:
+    help: get the value of a symbolic link
+
+- fs.touch:
     help: touch a file (create or update its utime)
-- unlink:
+- fs.mkdir:
+    help: create a new (empty) directory
+- fs.link:
+    help: create a file link
+- fs.symlink:
+    help: create a symbolic link
+
+- fs.unlink:
     help: remove a file
-- rename:
+- fs.rmdir:
+    help: remove an empty directory
+- fs.rename:
     help: rename a file
-- chown:
+- fs.copy:
+    help: copy a file from one name to another
+
+- fs.chown:
     help: change file ownership
-- chgrp:
+- fs.chgrp:
     help: change file group ownership
-- chmod:
+- fs.chmod:
     help: change file permissions
-- fsha1:
+
+- fs.sha1:
     help: calculate SHA1 of a file's contents
+- fs.get:
+    help: retrieve the contents of a local file
+- fs.put:
+    help: update the contents of a local file
 - getfile:
     help: retrieve a file from the server
 

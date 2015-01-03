@@ -1,21 +1,21 @@
 ; these are comments
 
 fn res.file.absent
-    fstat %a
+    fs.stat %a
     jz +1
     retv 0
 
-    isfile %a
+    fs.file? %a
     jz rm
 
-    islink %a
+    fs.symlink? %a
     jz rm
 
     err "%s exists, but is not a regular file"
     bail
 
   rm:
-    unlink %a
+    fs.unlink %a
     jnz +2
     mark
     retv 0
@@ -24,24 +24,24 @@ fn res.file.absent
     bail
 
 fn res.file.present
-    fstat %a
+    fs.stat %a
     jnz create
 
-    islink %a
+    fs.symlink? %a
     jz remove
 
     err "%s exists, but is not a regular file"
     bail
 
   remove:
-    unlink %a
+    fs.unlink %a
     jz create
 
     perror "failed to replace %s with a regular file"
     bail
 
   create:
-    touch %a
+    fs.touch %a
     jnz +2
     mark
     retv 0
@@ -59,7 +59,7 @@ fn res.file.chown
     bail
 
   ok:
-    chown %a %c
+    fs.chown %a %c
     jnz +2
     mark
     retv 0
@@ -77,7 +77,7 @@ fn res.file.chgrp
     bail
 
   ok:
-    chgrp %a %c
+    fs.chgrp %a %c
     jnz +2
     mark
     retv 0
@@ -86,7 +86,7 @@ fn res.file.chgrp
     bail
 
 fn res.file.chmod
-    chmod %a %b
+    fs.chmod %a %b
     jnz +2
     mark
     retv 0
@@ -98,7 +98,7 @@ fn res.file.diff
     ; %a is path
     ; %b is remote sha1
 
-    fsha1 %a %p
+    fs.sha1 %a %p
     jz +2
     perror "failed to calculate SHA1 for local copy of %s"
     bail
@@ -137,11 +137,11 @@ fn res.file.verify
 
     pop %a
     pop %b
-    rename %a %b
+    fs.rename %a %b
     jnz +1
     retv 0
 
-    unlink %a
+    fs.unlink %a
     perror "failed to rename %s to %s"
     bail
 

@@ -290,44 +290,44 @@ int vm_exec(vm_t *vm)
 			printf("mark\n");
 			break;
 
-		case FSTAT:
-			printf("fstat\n");
+		case FS_STAT:
+			printf("fs.stat\n");
 			break;
 
-		case ISFILE:
-			printf("isfile\n");
+		case FS_FILE_P:
+			printf("fs.file?\n");
 			break;
 
-		case ISLINK:
-			printf("islink\n");
+		case FS_SYMLINK_P:
+			printf("fs.symlink?\n");
 			break;
 
-		case TOUCH:
-			printf("touch\n");
+		case FS_TOUCH:
+			printf("fs.touch\n");
 			break;
 
-		case UNLINK:
-			printf("unlink\n");
+		case FS_UNLINK:
+			printf("fs.unlink\n");
 			break;
 
-		case RENAME:
-			printf("rename\n");
+		case FS_RENAME:
+			printf("fs.rename\n");
 			break;
 
-		case CHOWN:
-			printf("chown\n");
+		case FS_CHOWN:
+			printf("fs.chown\n");
 			break;
 
-		case CHGRP:
-			printf("chgrp\n");
+		case FS_CHGRP:
+			printf("fs.chgrp\n");
 			break;
 
-		case CHMOD:
-			printf("chmod\n");
+		case FS_CHMOD:
+			printf("fs.chmod\n");
 			break;
 
-		case FSHA1:
-			printf("fsha1\n");
+		case FS_SHA1:
+			printf("fs.sha1\n");
 			break;
 
 		case GETFILE:

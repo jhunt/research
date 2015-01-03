@@ -528,8 +528,8 @@ static int parse(void)
 				op->op = BAIL;
 				break;
 
-			case T_OPCODE_FSTAT:
-				op->op = FSTAT;
+			case T_OPCODE_FS_STAT:
+				op->op = FS_STAT;
 				NEXT;
 				switch (p.token) {
 				case T_REGISTER: OPERAND_REGISTER(oper1); break;
@@ -539,8 +539,8 @@ static int parse(void)
 				}
 				break;
 
-			case T_OPCODE_ISFILE:
-				op->op = ISFILE;
+			case T_OPCODE_FS_FILE_P:
+				op->op = FS_FILE_P;
 				NEXT;
 				switch (p.token) {
 				case T_REGISTER: OPERAND_REGISTER(oper1); break;
@@ -550,8 +550,8 @@ static int parse(void)
 				}
 				break;
 
-			case T_OPCODE_ISLINK:
-				op->op = ISLINK;
+			case T_OPCODE_FS_SYMLINK_P:
+				op->op = FS_SYMLINK_P;
 				NEXT;
 				switch (p.token) {
 				case T_REGISTER: OPERAND_REGISTER(oper1); break;
@@ -561,8 +561,8 @@ static int parse(void)
 				}
 				break;
 
-			case T_OPCODE_ISDIR:
-				op->op = ISDIR;
+			case T_OPCODE_FS_DIR_P:
+				op->op = FS_DIR_P;
 				NEXT;
 				switch (p.token) {
 				case T_REGISTER: OPERAND_REGISTER(oper1); break;
@@ -572,8 +572,8 @@ static int parse(void)
 				}
 				break;
 
-			case T_OPCODE_TOUCH:
-				op->op = TOUCH;
+			case T_OPCODE_FS_TOUCH:
+				op->op = FS_TOUCH;
 				NEXT;
 				switch (p.token) {
 				case T_REGISTER: OPERAND_REGISTER(oper1); break;
@@ -583,8 +583,8 @@ static int parse(void)
 				}
 				break;
 
-			case T_OPCODE_UNLINK:
-				op->op = UNLINK;
+			case T_OPCODE_FS_UNLINK:
+				op->op = FS_UNLINK;
 				NEXT;
 				switch (p.token) {
 				case T_REGISTER: OPERAND_REGISTER(oper1); break;
@@ -594,8 +594,8 @@ static int parse(void)
 				}
 				break;
 
-			case T_OPCODE_RENAME:
-				op->op = RENAME;
+			case T_OPCODE_FS_RENAME:
+				op->op = FS_RENAME;
 				NEXT;
 				switch (p.token) {
 				case T_REGISTER: OPERAND_REGISTER(oper1); break;
@@ -613,8 +613,8 @@ static int parse(void)
 				}
 				break;
 
-			case T_OPCODE_CHOWN:
-				op->op = CHOWN;
+			case T_OPCODE_FS_CHOWN:
+				op->op = FS_CHOWN;
 				NEXT;
 				switch (p.token) {
 				case T_REGISTER: OPERAND_REGISTER(oper1); break;
@@ -632,8 +632,8 @@ static int parse(void)
 				}
 				break;
 
-			case T_OPCODE_CHGRP:
-				op->op = CHGRP;
+			case T_OPCODE_FS_CHGRP:
+				op->op = FS_CHGRP;
 				NEXT;
 				switch (p.token) {
 				case T_REGISTER: OPERAND_REGISTER(oper1); break;
@@ -652,8 +652,8 @@ static int parse(void)
 
 				break;
 
-			case T_OPCODE_CHMOD:
-				op->op = CHMOD;
+			case T_OPCODE_FS_CHMOD:
+				op->op = FS_CHMOD;
 				NEXT;
 				switch (p.token) {
 				case T_REGISTER: OPERAND_REGISTER(oper1); break;
@@ -672,8 +672,8 @@ static int parse(void)
 				break;
 				break;
 
-			case T_OPCODE_FSHA1:
-				op->op = FSHA1;
+			case T_OPCODE_FS_SHA1:
+				op->op = FS_SHA1;
 				NEXT;
 				switch (p.token) {
 				case T_REGISTER: OPERAND_REGISTER(oper1); break;
