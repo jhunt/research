@@ -1,0 +1,8 @@
+;;
+;; pn/hello.pn
+;;
+;; The obligatory "Hello, World!" application
+;; written in Pendulum Bytecode
+
+fn main
+  echo "Hello, World!\n"

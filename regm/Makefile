@@ -12,3 +12,6 @@ clean:
 
 test: regm
 	./regm
+
+pn/%.b: pn/%.pn asm
+	./asm <$< >$@
