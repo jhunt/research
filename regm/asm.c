@@ -8,6 +8,7 @@
 
 #define OPCODES_EXTENDED
 #include "opcodes.h"
+#include "asm0.c"
 
 static const char * VTYPES[] = {
 	"NONE",
@@ -56,8 +57,7 @@ typedef struct {
 	void   *fn;          /* link to the FN that starts scope */
 
 	byte_t  op;          /* opcode number, for final encoding */
-	value_t oper1;       /* first operand (optional) */
-	value_t oper2;       /* second operand (optional) */
+	value_t args[2];     /* operands */
 
 	dword_t offset;      /* byte offset in opcode binary stream */
 	list_t  l;
@@ -296,13 +296,7 @@ static int parse(void)
 #define NEXT if (!lex(&p)) { logger(LOG_CRIT, "%s:%i: unexpected end of configuration\n", p.file, p.line); goto bail; }
 #define ERROR(s) do { logger(LOG_CRIT, "%s:%i: syntax error: %s", p.file, p.line, s); goto bail; } while (0)
 
-#define OPERAND_REGISTER(x) do { op->x.type = VALUE_REGISTER; op->x._.regname = p.value[0];      } while (0)
-#define OPERAND_NUMBER(x)   do { op->x.type = VALUE_NUMBER;   op->x._.literal = atoi(p.value);   } while (0)
-#define OPERAND_STRING(x)   do { op->x.type = VALUE_STRING;   op->x._.string  = strdup(p.value); } while (0)
-#define OPERAND_LABEL(x)    do { op->x.type = VALUE_LABEL;    op->x._.label   = strdup(p.value); } while (0)
-#define OPERAND_FNLABEL(x)  do { op->x.type = VALUE_FNLABEL;  op->x._.fnlabel = strdup(p.value); } while (0)
-#define OPERAND_OFFSET(x)   do { op->x.type = VALUE_OFFSET;   op->x._.offset  = atoi(p.value);   } while (0)
-
+	int i, j;
 	op_t *op;
 	while (lex(&p)) {
 
@@ -341,579 +335,46 @@ static int parse(void)
 			break;
 
 		case T_OPCODE:
-			switch (p.value[0]) {
-			case T_OPCODE_PUSH:
-				op->op = PUSH;
-				NEXT;
-				if (p.token != T_REGISTER)
-					ERROR("non-register operand given to push opcode");
-				op->oper1.type = VALUE_REGISTER;
-				op->oper1._.regname = p.value[0];
-				break;
+			for (i = 0; ASM_SYNTAX[i].token; i++) {
+				if (p.value[0] != ASM_SYNTAX[i].token) continue;
+				fprintf(stderr, "found opcode syntax rules at %i (%02x)\n", i, ASM_SYNTAX[i].opcode);
+				op->op = ASM_SYNTAX[i].opcode;
 
-			case T_OPCODE_POP:
-				op->op = POP;
-				NEXT;
-				if (p.token != T_REGISTER)
-					ERROR("non-register operand given to pop opcode");
-				op->oper1.type = VALUE_REGISTER;
-				op->oper1._.regname = p.value[0];
-				break;
+				for (j = 0; j < 2; j++) {
+					if (ASM_SYNTAX[i].args[j] == ARG_NONE) break;
+					NEXT;
 
-			case T_OPCODE_SET:
-				op->op = SET;
-				NEXT;
-				if (p.token != T_REGISTER)
-					ERROR("non-register operand given to set opcode");
-				OPERAND_REGISTER(oper1);
+					if (p.token == T_REGISTER && ASM_SYNTAX[i].args[j] & ARG_REGISTER) {
+						op->args[j].type = VALUE_REGISTER;
+						op->args[j]._.regname = p.value[0];
 
-				NEXT;
-				switch (p.token) {
-				case T_REGISTER: OPERAND_REGISTER(oper2); break;
-				case T_NUMBER:   OPERAND_NUMBER(oper2);   break;
-				case T_STRING:   OPERAND_STRING(oper2);   break;
-				default:
-					ERROR("unrecognized value operand given to set opcode");
+					} else if (p.token == T_NUMBER && ASM_SYNTAX[i].args[j] & ARG_NUMBER) {
+						op->args[j].type = VALUE_NUMBER;
+						op->args[j]._.literal = atoi(p.value);
+
+					} else if (p.token == T_STRING && ASM_SYNTAX[i].args[j] & ARG_STRING) {
+						op->args[j].type = VALUE_STRING;
+						op->args[j]._.string = strdup(p.value);
+
+					} else if (p.token == T_IDENTIFIER && ASM_SYNTAX[i].args[j] & ARG_LABEL) {
+						op->args[j].type = VALUE_LABEL;
+						op->args[j]._.label = strdup(p.value);
+
+					} else if (p.token == T_IDENTIFIER && ASM_SYNTAX[i].args[j] & ARG_FUNCTION) {
+						op->args[j].type = VALUE_FNLABEL;
+						op->args[j]._.fnlabel = strdup(p.value);
+
+					} else if (p.token == T_OFFSET && ASM_SYNTAX[i].args[j] & ARG_LABEL) {
+						op->args[j].type = VALUE_OFFSET;
+						op->args[j]._.offset = atoi(p.value);
+
+					} else {
+						logger(LOG_CRIT, "%s: %i: invalid form; expected `%s`",
+							p.file, p.line, ASM_SYNTAX[i].usage);
+						goto bail;
+					}
 				}
 				break;
-
-			case T_OPCODE_SWAP:
-				op->op = SWAP;
-				NEXT;
-				if (p.token != T_REGISTER)
-					ERROR("non-register operand given to swap opcode");
-				OPERAND_REGISTER(oper1);
-
-				NEXT;
-				if (p.token != T_REGISTER)
-					ERROR("non-register operand given to swap opcode");
-				OPERAND_REGISTER(oper2);
-				break;
-
-			case T_OPCODE_CALL:
-				op->op = CALL;
-				NEXT;
-				if (p.token != T_IDENTIFIER)
-					ERROR("non-literal function reference given to call opcode");
-				OPERAND_FNLABEL(oper1);
-				break;
-
-			case T_OPCODE_RET:
-				op->op = RET;
-				break;
-
-			case T_OPCODE_RETV:
-				op->op = RET;
-				NEXT;
-				switch (p.token) {
-				case T_REGISTER: OPERAND_REGISTER(oper1); break;
-				case T_NUMBER:   OPERAND_NUMBER(oper1);   break;
-				case T_STRING:   OPERAND_STRING(oper1);   break;
-				default:
-					ERROR("unrecognized value operand given to ret opcode");
-				}
-				break;
-
-			case T_OPCODE_CMP:
-				op->op = CMP;
-				NEXT;
-				switch (p.token) {
-				case T_REGISTER: OPERAND_REGISTER(oper1); break;
-				case T_NUMBER:   OPERAND_NUMBER(oper1);   break;
-				case T_STRING:
-					ERROR("string given as operand 1 of cmp opcode");
-				default:
-					ERROR("unrecognized value operand given to ret opcode");
-				}
-
-				NEXT;
-				switch (p.token) {
-				case T_REGISTER: OPERAND_REGISTER(oper2); break;
-				case T_NUMBER:   OPERAND_NUMBER(oper2);   break;
-				case T_STRING:
-					ERROR("string given as operand 2 of cmp opcode");
-				default:
-					ERROR("unrecognized value operand given to cmp opcode");
-				}
-				break;
-
-			case T_OPCODE_STRCMP:
-				op->op = STRCMP;
-				NEXT;
-				switch (p.token) {
-				case T_REGISTER: OPERAND_REGISTER(oper1); break;
-				case T_STRING:   OPERAND_STRING(oper1);   break;
-				case T_NUMBER:
-					ERROR("non-string given as operand 1 of strcmp opcode");
-				default:
-					ERROR("unrecognized value operand given to strcmp opcode");
-				}
-				NEXT;
-				switch (p.token) {
-				case T_REGISTER: OPERAND_REGISTER(oper2); break;
-				case T_STRING:   OPERAND_STRING(oper2);   break;
-				case T_NUMBER:
-					ERROR("non-string given as operand 2 of strcmp opcode");
-				default:
-					ERROR("unrecognized value operand given to strcmp opcode");
-				}
-				break;
-
-			case T_OPCODE_JMP:
-				op->op = JMP;
-				NEXT;
-				switch (p.token) {
-				case T_IDENTIFIER: OPERAND_LABEL(oper1);  break;
-				case T_OFFSET:     OPERAND_OFFSET(oper1); break;
-				default:
-					ERROR("non-label operand given to jmp opcode");
-				}
-				break;
-
-			case T_OPCODE_JZ:
-				op->op = JZ;
-				NEXT;
-				switch (p.token) {
-				case T_IDENTIFIER: OPERAND_LABEL(oper1);  break;
-				case T_OFFSET:     OPERAND_OFFSET(oper1); break;
-				default:
-					ERROR("non-label operand given to jz opcode");
-				}
-				break;
-
-			case T_OPCODE_JNZ:
-				op->op = JNZ;
-				NEXT;
-				switch (p.token) {
-				case T_IDENTIFIER: OPERAND_LABEL(oper1);  break;
-				case T_OFFSET:     OPERAND_OFFSET(oper1); break;
-				default:
-					ERROR("non-label operand given to jnz opcode");
-				}
-				break;
-
-			case T_OPCODE_HALT:
-				op->op = HALT;
-				break;
-
-			case T_OPCODE_DUMP:
-				op->op = DUMP;
-				break;
-
-			case T_OPCODE_ECHO:
-				op->op = ECHO;
-				NEXT;
-				if (p.token != T_STRING)
-					ERROR("non-string argument given to echo opcode");
-				OPERAND_STRING(oper1);
-				break;
-
-			case T_OPCODE_ERR:
-				op->op = ERR;
-				NEXT;
-				if (p.token != T_STRING)
-					ERROR("non-string argument given to err opcode");
-				OPERAND_STRING(oper1);
-				break;
-
-			case T_OPCODE_PERROR:
-				op->op = PERROR;
-				NEXT;
-				if (p.token != T_STRING)
-					ERROR("non-string argument given to perror opcode");
-				OPERAND_STRING(oper1);
-				break;
-
-			case T_OPCODE_BAIL:
-				op->op = BAIL;
-				break;
-
-			case T_OPCODE_FS_STAT:
-				op->op = FS_STAT;
-				NEXT;
-				switch (p.token) {
-				case T_REGISTER: OPERAND_REGISTER(oper1); break;
-				case T_STRING:   OPERAND_STRING(oper1); break;
-				default:
-					ERROR("fstat requires a string or a register for operand 1");
-				}
-				break;
-
-			case T_OPCODE_FS_FILE_P:
-				op->op = FS_FILE_P;
-				NEXT;
-				switch (p.token) {
-				case T_REGISTER: OPERAND_REGISTER(oper1); break;
-				case T_STRING:   OPERAND_STRING(oper1); break;
-				default:
-					ERROR("fs.file? requires a string or a register for operand 1");
-				}
-				break;
-
-			case T_OPCODE_FS_SYMLINK_P:
-				op->op = FS_SYMLINK_P;
-				NEXT;
-				switch (p.token) {
-				case T_REGISTER: OPERAND_REGISTER(oper1); break;
-				case T_STRING:   OPERAND_STRING(oper1); break;
-				default:
-					ERROR("fs.symlink? requires a string or a register for operand 1");
-				}
-				break;
-
-			case T_OPCODE_FS_DIR_P:
-				op->op = FS_DIR_P;
-				NEXT;
-				switch (p.token) {
-				case T_REGISTER: OPERAND_REGISTER(oper1); break;
-				case T_STRING:   OPERAND_STRING(oper1); break;
-				default:
-					ERROR("fs.dir? requires a string or a register for operand 1");
-				}
-				break;
-
-			case T_OPCODE_FS_CHARDEV_P:
-				op->op = FS_CHARDEV_P;
-				NEXT;
-				switch (p.token) {
-				case T_REGISTER: OPERAND_REGISTER(oper1); break;
-				case T_STRING:   OPERAND_STRING(oper1); break;
-				default:
-					ERROR("fs.chardev? requires a string or a register for operand 1");
-				}
-				break;
-
-			case T_OPCODE_FS_BLOCKDEV_P:
-				op->op = FS_BLOCKDEV_P;
-				NEXT;
-				switch (p.token) {
-				case T_REGISTER: OPERAND_REGISTER(oper1); break;
-				case T_STRING:   OPERAND_STRING(oper1); break;
-				default:
-					ERROR("fs.blockdev? requires a string or a register for operand 1");
-				}
-				break;
-
-			case T_OPCODE_FS_FIFO_P:
-				op->op = FS_FIFO_P;
-				NEXT;
-				switch (p.token) {
-				case T_REGISTER: OPERAND_REGISTER(oper1); break;
-				case T_STRING:   OPERAND_STRING(oper1); break;
-				default:
-					ERROR("fs.fifo? requires a string or a register for operand 1");
-				}
-				break;
-
-			case T_OPCODE_FS_SOCKET_P:
-				op->op = FS_SOCKET_P;
-				NEXT;
-				switch (p.token) {
-				case T_REGISTER: OPERAND_REGISTER(oper1); break;
-				case T_STRING:   OPERAND_STRING(oper1); break;
-				default:
-					ERROR("fs.socket? requires a string or a register for operand 1");
-				}
-				break;
-
-			case T_OPCODE_FS_READLINK:
-				op->op = FS_READLINK;
-				NEXT;
-				switch (p.token) {
-				case T_REGISTER: OPERAND_REGISTER(oper1); break;
-				case T_STRING:   OPERAND_STRING(oper1); break;
-				default:
-					ERROR("fs.readlink requires a string or a register for operand 1");
-				}
-				break;
-
-			case T_OPCODE_FS_TOUCH:
-				op->op = FS_TOUCH;
-				NEXT;
-				switch (p.token) {
-				case T_REGISTER: OPERAND_REGISTER(oper1); break;
-				case T_STRING:   OPERAND_STRING(oper1); break;
-				default:
-					ERROR("fs.touch requires a string or a register for operand 1");
-				}
-				break;
-
-			case T_OPCODE_FS_MKDIR:
-				op->op = FS_MKDIR;
-				NEXT;
-				switch (p.token) {
-				case T_REGISTER: OPERAND_REGISTER(oper1); break;
-				case T_STRING:   OPERAND_STRING(oper1); break;
-				default:
-					ERROR("fs.mkdir requires a string or a register for operand 1");
-				}
-				break;
-
-			case T_OPCODE_FS_LINK:
-				op->op = FS_LINK;
-				NEXT;
-				switch (p.token) {
-				case T_REGISTER: OPERAND_REGISTER(oper1); break;
-				case T_STRING:   OPERAND_STRING(oper1); break;
-				default:
-					ERROR("fs.link requires a string or a register for operand 1");
-				}
-
-				NEXT;
-				switch (p.token) {
-				case T_REGISTER: OPERAND_REGISTER(oper2); break;
-				case T_STRING:   OPERAND_STRING(oper2); break;
-				default:
-					ERROR("fs.link requires a string or a register for operand 2");
-				}
-				break;
-
-			case T_OPCODE_FS_SYMLINK:
-				op->op = FS_SYMLINK;
-				NEXT;
-				switch (p.token) {
-				case T_REGISTER: OPERAND_REGISTER(oper1); break;
-				case T_STRING:   OPERAND_STRING(oper1); break;
-				default:
-					ERROR("fs.symlink requires a string or a register for operand 1");
-				}
-
-				NEXT;
-				switch (p.token) {
-				case T_REGISTER: OPERAND_REGISTER(oper2); break;
-				case T_STRING:   OPERAND_STRING(oper2); break;
-				default:
-					ERROR("fs.symlink requires a string or a register for operand 2");
-				}
-				break;
-
-			case T_OPCODE_FS_UNLINK:
-				op->op = FS_UNLINK;
-				NEXT;
-				switch (p.token) {
-				case T_REGISTER: OPERAND_REGISTER(oper1); break;
-				case T_STRING:   OPERAND_STRING(oper1); break;
-				default:
-					ERROR("fs.unlink requires a string or a register for operand 1");
-				}
-				break;
-
-			case T_OPCODE_FS_RMDIR:
-				op->op = FS_RMDIR;
-				NEXT;
-				switch (p.token) {
-				case T_REGISTER: OPERAND_REGISTER(oper1); break;
-				case T_STRING:   OPERAND_STRING(oper1); break;
-				default:
-					ERROR("fs.rmdir requires a string or a register for operand 1");
-				}
-				break;
-
-			case T_OPCODE_FS_RENAME:
-				op->op = FS_RENAME;
-				NEXT;
-				switch (p.token) {
-				case T_REGISTER: OPERAND_REGISTER(oper1); break;
-				case T_STRING:   OPERAND_STRING(oper1); break;
-				default:
-					ERROR("fs.rename requires a string or a register for operand 1");
-				}
-
-				NEXT;
-				switch (p.token) {
-				case T_REGISTER: OPERAND_REGISTER(oper2); break;
-				case T_STRING:   OPERAND_STRING(oper2); break;
-				default:
-					ERROR("fs.rename requires a string or a register for operand 2");
-				}
-				break;
-
-			case T_OPCODE_FS_COPY:
-				op->op = FS_COPY;
-				NEXT;
-				switch (p.token) {
-				case T_REGISTER: OPERAND_REGISTER(oper1); break;
-				case T_STRING:   OPERAND_STRING(oper1); break;
-				default:
-					ERROR("fs.copy requires a string or a register for operand 1");
-				}
-
-				NEXT;
-				switch (p.token) {
-				case T_REGISTER: OPERAND_REGISTER(oper2); break;
-				case T_STRING:   OPERAND_STRING(oper2); break;
-				default:
-					ERROR("fs.copy requires a string or a register for operand 2");
-				}
-				break;
-
-			case T_OPCODE_FS_CHOWN:
-				op->op = FS_CHOWN;
-				NEXT;
-				switch (p.token) {
-				case T_REGISTER: OPERAND_REGISTER(oper1); break;
-				case T_STRING:   OPERAND_STRING(oper1); break;
-				default:
-					ERROR("fs.chown requires a string or a register for operand 1");
-				}
-
-				NEXT;
-				switch (p.token) {
-				case T_REGISTER: OPERAND_REGISTER(oper2); break;
-				case T_NUMBER:   OPERAND_NUMBER(oper2); break;
-				default:
-					ERROR("fs.chown requires a number or a register for operand 2");
-				}
-				break;
-
-			case T_OPCODE_FS_CHGRP:
-				op->op = FS_CHGRP;
-				NEXT;
-				switch (p.token) {
-				case T_REGISTER: OPERAND_REGISTER(oper1); break;
-				case T_STRING:   OPERAND_STRING(oper1); break;
-				default:
-					ERROR("fs.chgrp requires a string or a register for operand 1");
-				}
-
-				NEXT;
-				switch (p.token) {
-				case T_REGISTER: OPERAND_REGISTER(oper2); break;
-				case T_NUMBER:   OPERAND_NUMBER(oper2); break;
-				default:
-					ERROR("fs.chgrp requires a number or a register for operand 2");
-				}
-
-				break;
-
-			case T_OPCODE_FS_CHMOD:
-				op->op = FS_CHMOD;
-				NEXT;
-				switch (p.token) {
-				case T_REGISTER: OPERAND_REGISTER(oper1); break;
-				case T_STRING:   OPERAND_STRING(oper1); break;
-				default:
-					ERROR("fs.chmod requires a string or a register for operand 1");
-				}
-
-				NEXT;
-				switch (p.token) {
-				case T_REGISTER: OPERAND_REGISTER(oper2); break;
-				case T_NUMBER:   OPERAND_NUMBER(oper2); break;
-				default:
-					ERROR("fs.chmod requires a number or a register for operand 2");
-				}
-				break;
-				break;
-
-			case T_OPCODE_FS_SHA1:
-				op->op = FS_SHA1;
-				NEXT;
-				switch (p.token) {
-				case T_REGISTER: OPERAND_REGISTER(oper1); break;
-				case T_STRING:   OPERAND_STRING(oper1); break;
-				default:
-					ERROR("fs.sha1 requires a string or a register for operand 1");
-				}
-
-				NEXT;
-				if (p.token != T_REGISTER)
-					ERROR("fs.sha1 requires a register for operand 2");
-				OPERAND_REGISTER(oper2);
-				break;
-
-			case T_OPCODE_FS_GET:
-				op->op = FS_GET;
-				NEXT;
-				switch (p.token) {
-				case T_REGISTER: OPERAND_REGISTER(oper1); break;
-				case T_STRING:   OPERAND_STRING(oper1); break;
-				default:
-					ERROR("fs.get requires a string or a register for operand 1");
-				}
-
-				NEXT;
-				if (p.token != T_REGISTER)
-					ERROR("fs.get requires a register for operand 2");
-				OPERAND_REGISTER(oper2);
-				break;
-
-			case T_OPCODE_FS_PUT:
-				op->op = FS_PUT;
-				NEXT;
-				switch (p.token) {
-				case T_REGISTER: OPERAND_REGISTER(oper1); break;
-				case T_STRING:   OPERAND_STRING(oper1); break;
-				default:
-					ERROR("fs.put requires a string or a register for operand 1");
-				}
-
-				NEXT;
-				switch (p.token) {
-				case T_REGISTER: OPERAND_REGISTER(oper2); break;
-				case T_STRING:   OPERAND_STRING(oper2); break;
-				default:
-					ERROR("fs.put requires a string or a register for operand 2");
-				}
-				break;
-
-			case T_OPCODE_GETFILE:
-				op->op = GETFILE;
-				NEXT;
-				switch (p.token) {
-				case T_REGISTER: OPERAND_REGISTER(oper1); break;
-				case T_STRING:   OPERAND_STRING(oper1); break;
-				default:
-					ERROR("getfile requires a string or a register for operand 1");
-				}
-
-				NEXT;
-				switch (p.token) {
-				case T_REGISTER: OPERAND_REGISTER(oper2); break;
-				case T_STRING:   OPERAND_STRING(oper2); break;
-				default:
-					ERROR("getfile requires a string or a register for operand 2");
-				}
-				break;
-
-			case T_OPCODE_GETUID:
-				op->op = GETUID;
-				NEXT;
-				switch (p.token) {
-				case T_REGISTER: OPERAND_REGISTER(oper1); break;
-				case T_STRING:   OPERAND_STRING(oper1); break;
-				default:
-					ERROR("getuid requires a string or a register for operand 1");
-				}
-
-				NEXT;
-				OPERAND_REGISTER(oper2);
-				if (p.token != T_REGISTER)
-					ERROR("getuid requires a string or a register for operand 2");
-				break;
-
-			case T_OPCODE_GETGID:
-				op->op = GETGID;
-				NEXT;
-				switch (p.token) {
-				case T_REGISTER: OPERAND_REGISTER(oper1); break;
-				case T_STRING:   OPERAND_STRING(oper1); break;
-				default:
-					ERROR("getgid requires a string or a register for operand 1");
-				}
-
-				NEXT;
-				if (p.token != T_REGISTER)
-					ERROR("getgid requires a string or a register for operand 2");
-				OPERAND_REGISTER(oper2);
-				break;
-
-			case T_OPCODE_EXEC:
-				op->op = EXEC;
-				NEXT;
-				NEXT;
-				break;
-
 			}
 			break;
 
@@ -1055,8 +516,8 @@ static int compile(void)
 	/* phase I: runtime insertion */
 	op = calloc(1, sizeof(op_t));
 	op->op = JMP; /* JMP, don't CALL */
-	op->oper1.type = VALUE_FNLABEL;
-	op->oper1._.label = strdup("main");
+	op->args[0].type = VALUE_FNLABEL;
+	op->args[0]._.label = strdup("main");
 	list_unshift(&OPS, &op->l);
 
 	/* phase II: calculate offsets */
@@ -1065,8 +526,8 @@ static int compile(void)
 		op->offset = offset;
 		if (op->special) continue;
 		offset += 2;                                   /* 2-byte opcode  */
-		if (op->oper1.type != VALUE_NONE) offset += 4; /* 4-byte operand */
-		if (op->oper2.type != VALUE_NONE) offset += 4; /* 4-byte operand */
+		if (op->args[0].type != VALUE_NONE) offset += 4; /* 4-byte operand */
+		if (op->args[1].type != VALUE_NONE) offset += 4; /* 4-byte operand */
 	}
 	STATIC.offset = offset;
 	CODE = calloc(offset, sizeof(byte_t));
@@ -1076,27 +537,27 @@ static int compile(void)
 		if (op->special) continue;
 
 		/* phase II/III: resolve labels / pack strings */
-		rc = s_resolve(&op->oper1, op);
+		rc = s_resolve(&op->args[0], op);
 		assert(rc == 0);
-		rc = s_resolve(&op->oper2, op);
+		rc = s_resolve(&op->args[1], op);
 		assert(rc == 0);
 
 		/* phase IV: encode */
 		*c++ = op->op;
-		*c++ = ((op->oper1.bintype & 0xff) << 4)
-		     | ((op->oper2.bintype & 0xff));
+		*c++ = ((op->args[0].bintype & 0xff) << 4)
+		     | ((op->args[1].bintype & 0xff));
 
-		if (op->oper1.type) {
-			*c++ = ((op->oper1._.literal >> 24) & 0xff);
-			*c++ = ((op->oper1._.literal >> 16) & 0xff);
-			*c++ = ((op->oper1._.literal >>  8) & 0xff);
-			*c++ = ((op->oper1._.literal >>  0) & 0xff);
+		if (op->args[0].type) {
+			*c++ = ((op->args[0]._.literal >> 24) & 0xff);
+			*c++ = ((op->args[0]._.literal >> 16) & 0xff);
+			*c++ = ((op->args[0]._.literal >>  8) & 0xff);
+			*c++ = ((op->args[0]._.literal >>  0) & 0xff);
 		}
-		if (op->oper2.type) {
-			*c++ = ((op->oper2._.literal >> 24) & 0xff);
-			*c++ = ((op->oper2._.literal >> 16) & 0xff);
-			*c++ = ((op->oper2._.literal >>  8) & 0xff);
-			*c++ = ((op->oper2._.literal >>  0) & 0xff);
+		if (op->args[1].type) {
+			*c++ = ((op->args[1]._.literal >> 24) & 0xff);
+			*c++ = ((op->args[1]._.literal >> 16) & 0xff);
+			*c++ = ((op->args[1]._.literal >>  8) & 0xff);
+			*c++ = ((op->args[1]._.literal >>  0) & 0xff);
 		}
 	}
 
@@ -1116,22 +577,22 @@ int main(int argc, char **argv)
 	op_t *op;
 	for_each_object(op, &OPS, l) {
 		fprintf(stderr, "%08x [%04x] %s\n", op->offset, op->op, OPCODES[op->op]);
-		if (op->oper1.type != VALUE_NONE) {
-			fprintf(stderr, "%8s 1: %s (%i)\n", " ", VTYPES[op->oper1.type], op->oper1.type);
-			switch (op->oper1.type) {
-			case VALUE_NUMBER:  fprintf(stderr, "%11s= %i\n", " ", op->oper1._.literal); break;
-			case VALUE_LABEL:   fprintf(stderr, "%11s @%s\n", " ", op->oper1._.label); break;
-			case VALUE_STRING:  fprintf(stderr, "%11s \"%s\"\n", " ", op->oper1._.string); break;
-			case VALUE_ADDRESS: fprintf(stderr, "%11s %#010x\n", " ", op->oper1._.address); break;
+		if (op->args[0].type != VALUE_NONE) {
+			fprintf(stderr, "%8s 1: %s (%i)\n", " ", VTYPES[op->args[0].type], op->args[0].type);
+			switch (op->args[0].type) {
+			case VALUE_NUMBER:  fprintf(stderr, "%11s= %i\n", " ", op->args[0]._.literal); break;
+			case VALUE_LABEL:   fprintf(stderr, "%11s @%s\n", " ", op->args[0]._.label); break;
+			case VALUE_STRING:  fprintf(stderr, "%11s \"%s\"\n", " ", op->args[0]._.string); break;
+			case VALUE_ADDRESS: fprintf(stderr, "%11s %#010x\n", " ", op->args[0]._.address); break;
 			}
 		}
-		if (op->oper2.type != VALUE_NONE) {
-			fprintf(stderr, "%8s 2: %s (%i)\n", " ", VTYPES[op->oper2.type], op->oper2.type);
-			switch (op->oper2.type) {
-			case VALUE_NUMBER:  fprintf(stderr, "%11s= %i\n", " ", op->oper2._.literal); break;
-			case VALUE_LABEL:   fprintf(stderr, "%11s @%s\n", " ", op->oper2._.label); break;
-			case VALUE_STRING:  fprintf(stderr, "%11s \"%s\"\n", " ", op->oper2._.string); break;
-			case VALUE_ADDRESS: fprintf(stderr, "%11s %0#10x\n", " ", op->oper2._.address); break;
+		if (op->args[1].type != VALUE_NONE) {
+			fprintf(stderr, "%8s 2: %s (%i)\n", " ", VTYPES[op->args[1].type], op->args[1].type);
+			switch (op->args[1].type) {
+			case VALUE_NUMBER:  fprintf(stderr, "%11s= %i\n", " ", op->args[1]._.literal); break;
+			case VALUE_LABEL:   fprintf(stderr, "%11s @%s\n", " ", op->args[1]._.label); break;
+			case VALUE_STRING:  fprintf(stderr, "%11s \"%s\"\n", " ", op->args[1]._.string); break;
+			case VALUE_ADDRESS: fprintf(stderr, "%11s %0#10x\n", " ", op->args[1]._.address); break;
 			}
 		}
 		fprintf(stderr, "\n");

@@ -1,40 +1,74 @@
 - noop:
     help: does nothing
+    args: []
 - push:
     help: push a register onto data stack
+    args:
+      - [register]
 - pop:
     help: pop data stack top into a register
+    args: 
+      - [register]
 - set:
     help: set register value
+    args:
+      - [register]
+      - [register, string, number]
 - swap:
     help: swap two register values
+    args:
+      - [register]
+      - [register]
 
 - call:
     help: call a user-defined function
+    args:
+      - [function]
+
 - ret:
     help: return to caller
 - retv:
     help: return to caller (with value)
-    sugar: yes
+    alias: ret
+    args:
+      - [register, string, number]
 
 - cmp:
     help: compare two integers
+    args:
+      - [register, number]
+      - [register, number]
 - strcmp:
     help: compare two strings
+    args:
+      - [register, string]
+      - [register, string]
 
 - jmp:
     help: unconditional jump
+    args:
+      - [label]
 - jz:
     help: jump if accumulator is 0
+    args:
+      - [label]
 - jnz:
     help: jump if accumulator is not 0
+    args:
+      - [label]
 
 - echo:
     help: print a message to standard output
+    args:
+      - [string]
 - err:
     help: print an error
+    args:
+      - [string]
 - perror:
     help: print an error (with system error message)
+    args:
+      - [string]
 - bail:
     help: ...
 - mark:
@@ -42,64 +76,133 @@
 
 - fs.stat:
     help: check to see if a file exists
+    args:
+      - [register, string]
 - fs.file?:
     help: is a path a regular file?
+    args:
+      - [register, string]
 - fs.symlink?:
     help: is a path a symbolic link?
+    args:
+      - [register, string]
 - fs.dir?:
     help: is a path a directory?
+    args:
+      - [register, string]
 - fs.chardev?:
     help: is a path a character device?
+    args:
+      - [register, string]
 - fs.blockdev?:
     help: is a path a block device?
+    args:
+      - [register, string]
 - fs.fifo?:
     help: is a path a FIFO queue?
+    args:
+      - [register, string]
 - fs.socket?:
     help: is a path a socket?
+    args:
+      - [register, string]
 - fs.readlink:
     help: get the value of a symbolic link
+    args:
+      - [register, string]
+      - [register]
 
 - fs.touch:
     help: touch a file (create or update its utime)
+    args:
+      - [register, string]
 - fs.mkdir:
     help: create a new (empty) directory
+    args:
+      - [register, string]
 - fs.link:
     help: create a file link
+    args:
+      - [register, string]
+      - [register, string]
 - fs.symlink:
     help: create a symbolic link
+    args:
+      - [register, string]
+      - [register, string]
 
 - fs.unlink:
     help: remove a file
+    args:
+      - [register, string]
 - fs.rmdir:
     help: remove an empty directory
+    args:
+      - [register, string]
 - fs.rename:
     help: rename a file
+    args:
+      - [register, string]
+      - [register, string]
 - fs.copy:
     help: copy a file from one name to another
+    args:
+      - [register, string]
+      - [register, string]
 
 - fs.chown:
     help: change file ownership
+    args:
+      - [register, string]
+      - [register, number]
 - fs.chgrp:
     help: change file group ownership
+    args:
+      - [register, string]
+      - [register, number]
 - fs.chmod:
     help: change file permissions
+    args:
+      - [register, string]
+      - [register, number]
 
 - fs.sha1:
     help: calculate SHA1 of a file's contents
+    args:
+      - [register, string]
+      - [register]
 - fs.get:
     help: retrieve the contents of a local file
+    args:
+      - [register, string]
+      - [register]
 - fs.put:
     help: update the contents of a local file
+    args:
+      - [register, string]
+      - [register, string]
 - getfile:
     help: retrieve a file from the server
+    args:
+      - [register, string]
+      - [register, string]
 
 - getuid:
     help: look up a user's UID, by name
+    args:
+      - [register, string]
+      - [register]
 - getgid:
     help: look up a group's GID, by name
+    args:
+      - [register, string]
+      - [register]
 
 - exec:
     help: execute a command
+    args:
+      - [register, string]
+      - [register]
 
 - dump:
     help: dump virtual machine state for debugging
