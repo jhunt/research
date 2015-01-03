@@ -546,7 +546,7 @@ static int parse(void)
 				case T_REGISTER: OPERAND_REGISTER(oper1); break;
 				case T_STRING:   OPERAND_STRING(oper1); break;
 				default:
-					ERROR("isfile requires a string or a register for operand 1");
+					ERROR("fs.file? requires a string or a register for operand 1");
 				}
 				break;
 
@@ -557,7 +557,7 @@ static int parse(void)
 				case T_REGISTER: OPERAND_REGISTER(oper1); break;
 				case T_STRING:   OPERAND_STRING(oper1); break;
 				default:
-					ERROR("islink requires a string or a register for operand 1");
+					ERROR("fs.symlink? requires a string or a register for operand 1");
 				}
 				break;
 
@@ -568,7 +568,62 @@ static int parse(void)
 				case T_REGISTER: OPERAND_REGISTER(oper1); break;
 				case T_STRING:   OPERAND_STRING(oper1); break;
 				default:
-					ERROR("isdir requires a string or a register for operand 1");
+					ERROR("fs.dir? requires a string or a register for operand 1");
+				}
+				break;
+
+			case T_OPCODE_FS_CHARDEV_P:
+				op->op = FS_CHARDEV_P;
+				NEXT;
+				switch (p.token) {
+				case T_REGISTER: OPERAND_REGISTER(oper1); break;
+				case T_STRING:   OPERAND_STRING(oper1); break;
+				default:
+					ERROR("fs.chardev? requires a string or a register for operand 1");
+				}
+				break;
+
+			case T_OPCODE_FS_BLOCKDEV_P:
+				op->op = FS_BLOCKDEV_P;
+				NEXT;
+				switch (p.token) {
+				case T_REGISTER: OPERAND_REGISTER(oper1); break;
+				case T_STRING:   OPERAND_STRING(oper1); break;
+				default:
+					ERROR("fs.blockdev? requires a string or a register for operand 1");
+				}
+				break;
+
+			case T_OPCODE_FS_FIFO_P:
+				op->op = FS_FIFO_P;
+				NEXT;
+				switch (p.token) {
+				case T_REGISTER: OPERAND_REGISTER(oper1); break;
+				case T_STRING:   OPERAND_STRING(oper1); break;
+				default:
+					ERROR("fs.fifo? requires a string or a register for operand 1");
+				}
+				break;
+
+			case T_OPCODE_FS_SOCKET_P:
+				op->op = FS_SOCKET_P;
+				NEXT;
+				switch (p.token) {
+				case T_REGISTER: OPERAND_REGISTER(oper1); break;
+				case T_STRING:   OPERAND_STRING(oper1); break;
+				default:
+					ERROR("fs.socket? requires a string or a register for operand 1");
+				}
+				break;
+
+			case T_OPCODE_FS_READLINK:
+				op->op = FS_READLINK;
+				NEXT;
+				switch (p.token) {
+				case T_REGISTER: OPERAND_REGISTER(oper1); break;
+				case T_STRING:   OPERAND_STRING(oper1); break;
+				default:
+					ERROR("fs.readlink requires a string or a register for operand 1");
 				}
 				break;
 
@@ -579,7 +634,56 @@ static int parse(void)
 				case T_REGISTER: OPERAND_REGISTER(oper1); break;
 				case T_STRING:   OPERAND_STRING(oper1); break;
 				default:
-					ERROR("touch requires a string or a register for operand 1");
+					ERROR("fs.touch requires a string or a register for operand 1");
+				}
+				break;
+
+			case T_OPCODE_FS_MKDIR:
+				op->op = FS_MKDIR;
+				NEXT;
+				switch (p.token) {
+				case T_REGISTER: OPERAND_REGISTER(oper1); break;
+				case T_STRING:   OPERAND_STRING(oper1); break;
+				default:
+					ERROR("fs.mkdir requires a string or a register for operand 1");
+				}
+				break;
+
+			case T_OPCODE_FS_LINK:
+				op->op = FS_LINK;
+				NEXT;
+				switch (p.token) {
+				case T_REGISTER: OPERAND_REGISTER(oper1); break;
+				case T_STRING:   OPERAND_STRING(oper1); break;
+				default:
+					ERROR("fs.link requires a string or a register for operand 1");
+				}
+
+				NEXT;
+				switch (p.token) {
+				case T_REGISTER: OPERAND_REGISTER(oper2); break;
+				case T_STRING:   OPERAND_STRING(oper2); break;
+				default:
+					ERROR("fs.link requires a string or a register for operand 2");
+				}
+				break;
+
+			case T_OPCODE_FS_SYMLINK:
+				op->op = FS_SYMLINK;
+				NEXT;
+				switch (p.token) {
+				case T_REGISTER: OPERAND_REGISTER(oper1); break;
+				case T_STRING:   OPERAND_STRING(oper1); break;
+				default:
+					ERROR("fs.symlink requires a string or a register for operand 1");
+				}
+
+				NEXT;
+				switch (p.token) {
+				case T_REGISTER: OPERAND_REGISTER(oper2); break;
+				case T_STRING:   OPERAND_STRING(oper2); break;
+				default:
+					ERROR("fs.symlink requires a string or a register for operand 2");
 				}
 				break;
 
@@ -590,7 +694,18 @@ static int parse(void)
 				case T_REGISTER: OPERAND_REGISTER(oper1); break;
 				case T_STRING:   OPERAND_STRING(oper1); break;
 				default:
-					ERROR("unlink requires a string or a register for operand 1");
+					ERROR("fs.unlink requires a string or a register for operand 1");
+				}
+				break;
+
+			case T_OPCODE_FS_RMDIR:
+				op->op = FS_RMDIR;
+				NEXT;
+				switch (p.token) {
+				case T_REGISTER: OPERAND_REGISTER(oper1); break;
+				case T_STRING:   OPERAND_STRING(oper1); break;
+				default:
+					ERROR("fs.rmdir requires a string or a register for operand 1");
 				}
 				break;
 
@@ -601,7 +716,7 @@ static int parse(void)
 				case T_REGISTER: OPERAND_REGISTER(oper1); break;
 				case T_STRING:   OPERAND_STRING(oper1); break;
 				default:
-					ERROR("rename requires a string or a register for operand 1");
+					ERROR("fs.rename requires a string or a register for operand 1");
 				}
 
 				NEXT;
@@ -609,7 +724,26 @@ static int parse(void)
 				case T_REGISTER: OPERAND_REGISTER(oper2); break;
 				case T_STRING:   OPERAND_STRING(oper2); break;
 				default:
-					ERROR("rename requires a string or a register for operand 2");
+					ERROR("fs.rename requires a string or a register for operand 2");
+				}
+				break;
+
+			case T_OPCODE_FS_COPY:
+				op->op = FS_COPY;
+				NEXT;
+				switch (p.token) {
+				case T_REGISTER: OPERAND_REGISTER(oper1); break;
+				case T_STRING:   OPERAND_STRING(oper1); break;
+				default:
+					ERROR("fs.copy requires a string or a register for operand 1");
+				}
+
+				NEXT;
+				switch (p.token) {
+				case T_REGISTER: OPERAND_REGISTER(oper2); break;
+				case T_STRING:   OPERAND_STRING(oper2); break;
+				default:
+					ERROR("fs.copy requires a string or a register for operand 2");
 				}
 				break;
 
@@ -620,15 +754,15 @@ static int parse(void)
 				case T_REGISTER: OPERAND_REGISTER(oper1); break;
 				case T_STRING:   OPERAND_STRING(oper1); break;
 				default:
-					ERROR("rename requires a string or a register for operand 1");
+					ERROR("fs.chown requires a string or a register for operand 1");
 				}
 
 				NEXT;
 				switch (p.token) {
 				case T_REGISTER: OPERAND_REGISTER(oper2); break;
-				case T_STRING:   OPERAND_STRING(oper2); break;
+				case T_NUMBER:   OPERAND_NUMBER(oper2); break;
 				default:
-					ERROR("rename requires a string or a register for operand 2");
+					ERROR("fs.chown requires a number or a register for operand 2");
 				}
 				break;
 
@@ -639,15 +773,15 @@ static int parse(void)
 				case T_REGISTER: OPERAND_REGISTER(oper1); break;
 				case T_STRING:   OPERAND_STRING(oper1); break;
 				default:
-					ERROR("chgrp requires a string or a register for operand 1");
+					ERROR("fs.chgrp requires a string or a register for operand 1");
 				}
 
 				NEXT;
 				switch (p.token) {
 				case T_REGISTER: OPERAND_REGISTER(oper2); break;
-				case T_STRING:   OPERAND_STRING(oper2); break;
+				case T_NUMBER:   OPERAND_NUMBER(oper2); break;
 				default:
-					ERROR("chgrp requires a string or a register for operand 2");
+					ERROR("fs.chgrp requires a number or a register for operand 2");
 				}
 
 				break;
@@ -659,7 +793,7 @@ static int parse(void)
 				case T_REGISTER: OPERAND_REGISTER(oper1); break;
 				case T_STRING:   OPERAND_STRING(oper1); break;
 				default:
-					ERROR("chmod requires a string or a register for operand 1");
+					ERROR("fs.chmod requires a string or a register for operand 1");
 				}
 
 				NEXT;
@@ -667,7 +801,7 @@ static int parse(void)
 				case T_REGISTER: OPERAND_REGISTER(oper2); break;
 				case T_NUMBER:   OPERAND_NUMBER(oper2); break;
 				default:
-					ERROR("chmod requires a number or a register for operand 2");
+					ERROR("fs.chmod requires a number or a register for operand 2");
 				}
 				break;
 				break;
@@ -679,13 +813,48 @@ static int parse(void)
 				case T_REGISTER: OPERAND_REGISTER(oper1); break;
 				case T_STRING:   OPERAND_STRING(oper1); break;
 				default:
-					ERROR("fsha1 requires a string or a register for operand 1");
+					ERROR("fs.sha1 requires a string or a register for operand 1");
 				}
 
 				NEXT;
 				if (p.token != T_REGISTER)
-					ERROR("fsha1 requires a regsister for operand 2");
+					ERROR("fs.sha1 requires a register for operand 2");
 				OPERAND_REGISTER(oper2);
+				break;
+
+			case T_OPCODE_FS_GET:
+				op->op = FS_GET;
+				NEXT;
+				switch (p.token) {
+				case T_REGISTER: OPERAND_REGISTER(oper1); break;
+				case T_STRING:   OPERAND_STRING(oper1); break;
+				default:
+					ERROR("fs.get requires a string or a register for operand 1");
+				}
+
+				NEXT;
+				if (p.token != T_REGISTER)
+					ERROR("fs.get requires a register for operand 2");
+				OPERAND_REGISTER(oper2);
+				break;
+
+			case T_OPCODE_FS_PUT:
+				op->op = FS_PUT;
+				NEXT;
+				switch (p.token) {
+				case T_REGISTER: OPERAND_REGISTER(oper1); break;
+				case T_STRING:   OPERAND_STRING(oper1); break;
+				default:
+					ERROR("fs.put requires a string or a register for operand 1");
+				}
+
+				NEXT;
+				switch (p.token) {
+				case T_REGISTER: OPERAND_REGISTER(oper2); break;
+				case T_STRING:   OPERAND_STRING(oper2); break;
+				default:
+					ERROR("fs.put requires a string or a register for operand 2");
+				}
 				break;
 
 			case T_OPCODE_GETFILE:
