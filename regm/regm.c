@@ -137,8 +137,6 @@ int vm_exec(vm_t *vm)
 		f2 = LO_NYBLE(vm->code[vm->pc]);
 		vm->pc++;
 
-		//printf("[[ %02x %01x %01x ]]\n", op, f1, f2);
-
 		if (f2 && !f1)
 			B_ERR("corrupt operands mask detected; f1=%02x, f2=%02x", f1, f2);
 
@@ -213,9 +211,9 @@ int vm_exec(vm_t *vm)
 			break;
 
 		case ADD:
-			ARG2("Add");
+			ARG2("add");
 			if (!is_register(f1))
-				B_ERR("swap requires a register index for operand 1");
+				B_ERR("add requires a register index for operand 1");
 			if (oper1 > NREGS)
 				B_ERR("register %08x is out of bounds", oper1);
 
@@ -225,7 +223,7 @@ int vm_exec(vm_t *vm)
 		case SUB:
 			ARG2("sub");
 			if (!is_register(f1))
-				B_ERR("swap requires a register index for operand 1");
+				B_ERR("sub requires a register index for operand 1");
 			if (oper1 > NREGS)
 				B_ERR("register %08x is out of bounds", oper1);
 
@@ -235,7 +233,7 @@ int vm_exec(vm_t *vm)
 		case MULT:
 			ARG2("mult");
 			if (!is_register(f1))
-				B_ERR("swap requires a register index for operand 1");
+				B_ERR("mult requires a register index for operand 1");
 			if (oper1 > NREGS)
 				B_ERR("register %08x is out of bounds", oper1);
 
@@ -245,7 +243,7 @@ int vm_exec(vm_t *vm)
 		case DIV:
 			ARG2("div");
 			if (!is_register(f1))
-				B_ERR("swap requires a register index for operand 1");
+				B_ERR("div requires a register index for operand 1");
 			if (oper1 > NREGS)
 				B_ERR("register %08x is out of bounds", oper1);
 
@@ -255,7 +253,7 @@ int vm_exec(vm_t *vm)
 		case MOD:
 			ARG2("mod");
 			if (!is_register(f1))
-				B_ERR("swap requires a register index for operand 1");
+				B_ERR("mod requires a register index for operand 1");
 			if (oper1 > NREGS)
 				B_ERR("register %08x is out of bounds", oper1);
 
