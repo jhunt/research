@@ -20,6 +20,32 @@
       - [register]
       - [register]
 
+- add:
+    help: add the second operand to the first
+    args:
+      - [register]
+      - [register, number]
+- sub:
+    help: subtract the second operand from the first
+    args:
+      - [register]
+      - [register, number]
+- mult:
+    help: multiply the first operand by the second
+    args:
+      - [register]
+      - [register, number]
+- div:
+    help: divide the first operand by the second
+    args:
+      - [register]
+      - [register, number]
+- mod:
+    help: modulo the first operand by the second
+    args:
+      - [register]
+      - [register, number]
+
 - call:
     help: call a user-defined function
     args:

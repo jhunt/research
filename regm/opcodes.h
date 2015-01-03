@@ -6,47 +6,52 @@
 #define POP            0x02  /* pop data stack top into a register */
 #define SET            0x03  /* set register value */
 #define SWAP           0x04  /* swap two register values */
-#define CALL           0x05  /* call a user-defined function */
-#define RET            0x06  /* return to caller */
-#define CMP            0x07  /* compare two integers */
-#define STRCMP         0x08  /* compare two strings */
-#define JMP            0x09  /* unconditional jump */
-#define JZ             0x0a  /* jump if accumulator is 0 */
-#define JNZ            0x0b  /* jump if accumulator is not 0 */
-#define ECHO           0x0c  /* print a message to standard output */
-#define ERR            0x0d  /* print an error */
-#define PERROR         0x0e  /* print an error (with system error message) */
-#define BAIL           0x0f  /* ... */
-#define MARK           0x10  /* ... */
-#define FS_STAT        0x11  /* check to see if a file exists */
-#define FS_FILE_P      0x12  /* is a path a regular file? */
-#define FS_SYMLINK_P   0x13  /* is a path a symbolic link? */
-#define FS_DIR_P       0x14  /* is a path a directory? */
-#define FS_CHARDEV_P   0x15  /* is a path a character device? */
-#define FS_BLOCKDEV_P  0x16  /* is a path a block device? */
-#define FS_FIFO_P      0x17  /* is a path a FIFO queue? */
-#define FS_SOCKET_P    0x18  /* is a path a socket? */
-#define FS_READLINK    0x19  /* get the value of a symbolic link */
-#define FS_TOUCH       0x1a  /* touch a file (create or update its utime) */
-#define FS_MKDIR       0x1b  /* create a new (empty) directory */
-#define FS_LINK        0x1c  /* create a file link */
-#define FS_SYMLINK     0x1d  /* create a symbolic link */
-#define FS_UNLINK      0x1e  /* remove a file */
-#define FS_RMDIR       0x1f  /* remove an empty directory */
-#define FS_RENAME      0x20  /* rename a file */
-#define FS_COPY        0x21  /* copy a file from one name to another */
-#define FS_CHOWN       0x22  /* change file ownership */
-#define FS_CHGRP       0x23  /* change file group ownership */
-#define FS_CHMOD       0x24  /* change file permissions */
-#define FS_SHA1        0x25  /* calculate SHA1 of a file's contents */
-#define FS_GET         0x26  /* retrieve the contents of a local file */
-#define FS_PUT         0x27  /* update the contents of a local file */
-#define GETFILE        0x28  /* retrieve a file from the server */
-#define GETUID         0x29  /* look up a user's UID, by name */
-#define GETGID         0x2a  /* look up a group's GID, by name */
-#define EXEC           0x2b  /* execute a command */
-#define DUMP           0x2c  /* dump virtual machine state for debugging */
-#define HALT           0x2d  /* halt the virtual machine */
+#define ADD            0x05  /* add the second operand to the first */
+#define SUB            0x06  /* subtract the second operand from the first */
+#define MULT           0x07  /* multiply the first operand by the second */
+#define DIV            0x08  /* divide the first operand by the second */
+#define MOD            0x09  /* modulo the first operand by the second */
+#define CALL           0x0a  /* call a user-defined function */
+#define RET            0x0b  /* return to caller */
+#define CMP            0x0c  /* compare two integers */
+#define STRCMP         0x0d  /* compare two strings */
+#define JMP            0x0e  /* unconditional jump */
+#define JZ             0x0f  /* jump if accumulator is 0 */
+#define JNZ            0x10  /* jump if accumulator is not 0 */
+#define ECHO           0x11  /* print a message to standard output */
+#define ERR            0x12  /* print an error */
+#define PERROR         0x13  /* print an error (with system error message) */
+#define BAIL           0x14  /* ... */
+#define MARK           0x15  /* ... */
+#define FS_STAT        0x16  /* check to see if a file exists */
+#define FS_FILE_P      0x17  /* is a path a regular file? */
+#define FS_SYMLINK_P   0x18  /* is a path a symbolic link? */
+#define FS_DIR_P       0x19  /* is a path a directory? */
+#define FS_CHARDEV_P   0x1a  /* is a path a character device? */
+#define FS_BLOCKDEV_P  0x1b  /* is a path a block device? */
+#define FS_FIFO_P      0x1c  /* is a path a FIFO queue? */
+#define FS_SOCKET_P    0x1d  /* is a path a socket? */
+#define FS_READLINK    0x1e  /* get the value of a symbolic link */
+#define FS_TOUCH       0x1f  /* touch a file (create or update its utime) */
+#define FS_MKDIR       0x20  /* create a new (empty) directory */
+#define FS_LINK        0x21  /* create a file link */
+#define FS_SYMLINK     0x22  /* create a symbolic link */
+#define FS_UNLINK      0x23  /* remove a file */
+#define FS_RMDIR       0x24  /* remove an empty directory */
+#define FS_RENAME      0x25  /* rename a file */
+#define FS_COPY        0x26  /* copy a file from one name to another */
+#define FS_CHOWN       0x27  /* change file ownership */
+#define FS_CHGRP       0x28  /* change file group ownership */
+#define FS_CHMOD       0x29  /* change file permissions */
+#define FS_SHA1        0x2a  /* calculate SHA1 of a file's contents */
+#define FS_GET         0x2b  /* retrieve the contents of a local file */
+#define FS_PUT         0x2c  /* update the contents of a local file */
+#define GETFILE        0x2d  /* retrieve a file from the server */
+#define GETUID         0x2e  /* look up a user's UID, by name */
+#define GETGID         0x2f  /* look up a group's GID, by name */
+#define EXEC           0x30  /* execute a command */
+#define DUMP           0x31  /* dump virtual machine state for debugging */
+#define HALT           0x32  /* halt the virtual machine */
 
 
 #ifdef OPCODES_EXTENDED
@@ -57,47 +62,52 @@ static const char * OPCODES[] = {
 	"pop",           /* POP             2  0x02 */
 	"set",           /* SET             3  0x03 */
 	"swap",          /* SWAP            4  0x04 */
-	"call",          /* CALL            5  0x05 */
-	"ret",           /* RET             6  0x06 */
-	"cmp",           /* CMP             7  0x07 */
-	"strcmp",        /* STRCMP          8  0x08 */
-	"jmp",           /* JMP             9  0x09 */
-	"jz",            /* JZ             10  0x0a */
-	"jnz",           /* JNZ            11  0x0b */
-	"echo",          /* ECHO           12  0x0c */
-	"err",           /* ERR            13  0x0d */
-	"perror",        /* PERROR         14  0x0e */
-	"bail",          /* BAIL           15  0x0f */
-	"mark",          /* MARK           16  0x10 */
-	"fs.stat",       /* FS_STAT        17  0x11 */
-	"fs.file?",      /* FS_FILE_P      18  0x12 */
-	"fs.symlink?",   /* FS_SYMLINK_P   19  0x13 */
-	"fs.dir?",       /* FS_DIR_P       20  0x14 */
-	"fs.chardev?",   /* FS_CHARDEV_P   21  0x15 */
-	"fs.blockdev?",  /* FS_BLOCKDEV_P  22  0x16 */
-	"fs.fifo?",      /* FS_FIFO_P      23  0x17 */
-	"fs.socket?",    /* FS_SOCKET_P    24  0x18 */
-	"fs.readlink",   /* FS_READLINK    25  0x19 */
-	"fs.touch",      /* FS_TOUCH       26  0x1a */
-	"fs.mkdir",      /* FS_MKDIR       27  0x1b */
-	"fs.link",       /* FS_LINK        28  0x1c */
-	"fs.symlink",    /* FS_SYMLINK     29  0x1d */
-	"fs.unlink",     /* FS_UNLINK      30  0x1e */
-	"fs.rmdir",      /* FS_RMDIR       31  0x1f */
-	"fs.rename",     /* FS_RENAME      32  0x20 */
-	"fs.copy",       /* FS_COPY        33  0x21 */
-	"fs.chown",      /* FS_CHOWN       34  0x22 */
-	"fs.chgrp",      /* FS_CHGRP       35  0x23 */
-	"fs.chmod",      /* FS_CHMOD       36  0x24 */
-	"fs.sha1",       /* FS_SHA1        37  0x25 */
-	"fs.get",        /* FS_GET         38  0x26 */
-	"fs.put",        /* FS_PUT         39  0x27 */
-	"getfile",       /* GETFILE        40  0x28 */
-	"getuid",        /* GETUID         41  0x29 */
-	"getgid",        /* GETGID         42  0x2a */
-	"exec",          /* EXEC           43  0x2b */
-	"dump",          /* DUMP           44  0x2c */
-	"halt",          /* HALT           45  0x2d */
+	"add",           /* ADD             5  0x05 */
+	"sub",           /* SUB             6  0x06 */
+	"mult",          /* MULT            7  0x07 */
+	"div",           /* DIV             8  0x08 */
+	"mod",           /* MOD             9  0x09 */
+	"call",          /* CALL           10  0x0a */
+	"ret",           /* RET            11  0x0b */
+	"cmp",           /* CMP            12  0x0c */
+	"strcmp",        /* STRCMP         13  0x0d */
+	"jmp",           /* JMP            14  0x0e */
+	"jz",            /* JZ             15  0x0f */
+	"jnz",           /* JNZ            16  0x10 */
+	"echo",          /* ECHO           17  0x11 */
+	"err",           /* ERR            18  0x12 */
+	"perror",        /* PERROR         19  0x13 */
+	"bail",          /* BAIL           20  0x14 */
+	"mark",          /* MARK           21  0x15 */
+	"fs.stat",       /* FS_STAT        22  0x16 */
+	"fs.file?",      /* FS_FILE_P      23  0x17 */
+	"fs.symlink?",   /* FS_SYMLINK_P   24  0x18 */
+	"fs.dir?",       /* FS_DIR_P       25  0x19 */
+	"fs.chardev?",   /* FS_CHARDEV_P   26  0x1a */
+	"fs.blockdev?",  /* FS_BLOCKDEV_P  27  0x1b */
+	"fs.fifo?",      /* FS_FIFO_P      28  0x1c */
+	"fs.socket?",    /* FS_SOCKET_P    29  0x1d */
+	"fs.readlink",   /* FS_READLINK    30  0x1e */
+	"fs.touch",      /* FS_TOUCH       31  0x1f */
+	"fs.mkdir",      /* FS_MKDIR       32  0x20 */
+	"fs.link",       /* FS_LINK        33  0x21 */
+	"fs.symlink",    /* FS_SYMLINK     34  0x22 */
+	"fs.unlink",     /* FS_UNLINK      35  0x23 */
+	"fs.rmdir",      /* FS_RMDIR       36  0x24 */
+	"fs.rename",     /* FS_RENAME      37  0x25 */
+	"fs.copy",       /* FS_COPY        38  0x26 */
+	"fs.chown",      /* FS_CHOWN       39  0x27 */
+	"fs.chgrp",      /* FS_CHGRP       40  0x28 */
+	"fs.chmod",      /* FS_CHMOD       41  0x29 */
+	"fs.sha1",       /* FS_SHA1        42  0x2a */
+	"fs.get",        /* FS_GET         43  0x2b */
+	"fs.put",        /* FS_PUT         44  0x2c */
+	"getfile",       /* GETFILE        45  0x2d */
+	"getuid",        /* GETUID         46  0x2e */
+	"getgid",        /* GETGID         47  0x2f */
+	"exec",          /* EXEC           48  0x30 */
+	"dump",          /* DUMP           49  0x31 */
+	"halt",          /* HALT           50  0x32 */
 	NULL,
 };
 
@@ -108,48 +118,53 @@ static const char * OPCODES[] = {
 #define T_OPCODE_POP            0x42  /* pop data stack top into a register */
 #define T_OPCODE_SET            0x43  /* set register value */
 #define T_OPCODE_SWAP           0x44  /* swap two register values */
-#define T_OPCODE_CALL           0x45  /* call a user-defined function */
-#define T_OPCODE_RET            0x46  /* return to caller */
-#define T_OPCODE_RETV           0x47  /* return to caller (with value) */
-#define T_OPCODE_CMP            0x48  /* compare two integers */
-#define T_OPCODE_STRCMP         0x49  /* compare two strings */
-#define T_OPCODE_JMP            0x4a  /* unconditional jump */
-#define T_OPCODE_JZ             0x4b  /* jump if accumulator is 0 */
-#define T_OPCODE_JNZ            0x4c  /* jump if accumulator is not 0 */
-#define T_OPCODE_ECHO           0x4d  /* print a message to standard output */
-#define T_OPCODE_ERR            0x4e  /* print an error */
-#define T_OPCODE_PERROR         0x4f  /* print an error (with system error message) */
-#define T_OPCODE_BAIL           0x50  /* ... */
-#define T_OPCODE_MARK           0x51  /* ... */
-#define T_OPCODE_FS_STAT        0x52  /* check to see if a file exists */
-#define T_OPCODE_FS_FILE_P      0x53  /* is a path a regular file? */
-#define T_OPCODE_FS_SYMLINK_P   0x54  /* is a path a symbolic link? */
-#define T_OPCODE_FS_DIR_P       0x55  /* is a path a directory? */
-#define T_OPCODE_FS_CHARDEV_P   0x56  /* is a path a character device? */
-#define T_OPCODE_FS_BLOCKDEV_P  0x57  /* is a path a block device? */
-#define T_OPCODE_FS_FIFO_P      0x58  /* is a path a FIFO queue? */
-#define T_OPCODE_FS_SOCKET_P    0x59  /* is a path a socket? */
-#define T_OPCODE_FS_READLINK    0x5a  /* get the value of a symbolic link */
-#define T_OPCODE_FS_TOUCH       0x5b  /* touch a file (create or update its utime) */
-#define T_OPCODE_FS_MKDIR       0x5c  /* create a new (empty) directory */
-#define T_OPCODE_FS_LINK        0x5d  /* create a file link */
-#define T_OPCODE_FS_SYMLINK     0x5e  /* create a symbolic link */
-#define T_OPCODE_FS_UNLINK      0x5f  /* remove a file */
-#define T_OPCODE_FS_RMDIR       0x60  /* remove an empty directory */
-#define T_OPCODE_FS_RENAME      0x61  /* rename a file */
-#define T_OPCODE_FS_COPY        0x62  /* copy a file from one name to another */
-#define T_OPCODE_FS_CHOWN       0x63  /* change file ownership */
-#define T_OPCODE_FS_CHGRP       0x64  /* change file group ownership */
-#define T_OPCODE_FS_CHMOD       0x65  /* change file permissions */
-#define T_OPCODE_FS_SHA1        0x66  /* calculate SHA1 of a file's contents */
-#define T_OPCODE_FS_GET         0x67  /* retrieve the contents of a local file */
-#define T_OPCODE_FS_PUT         0x68  /* update the contents of a local file */
-#define T_OPCODE_GETFILE        0x69  /* retrieve a file from the server */
-#define T_OPCODE_GETUID         0x6a  /* look up a user's UID, by name */
-#define T_OPCODE_GETGID         0x6b  /* look up a group's GID, by name */
-#define T_OPCODE_EXEC           0x6c  /* execute a command */
-#define T_OPCODE_DUMP           0x6d  /* dump virtual machine state for debugging */
-#define T_OPCODE_HALT           0x6e  /* halt the virtual machine */
+#define T_OPCODE_ADD            0x45  /* add the second operand to the first */
+#define T_OPCODE_SUB            0x46  /* subtract the second operand from the first */
+#define T_OPCODE_MULT           0x47  /* multiply the first operand by the second */
+#define T_OPCODE_DIV            0x48  /* divide the first operand by the second */
+#define T_OPCODE_MOD            0x49  /* modulo the first operand by the second */
+#define T_OPCODE_CALL           0x4a  /* call a user-defined function */
+#define T_OPCODE_RET            0x4b  /* return to caller */
+#define T_OPCODE_RETV           0x4c  /* return to caller (with value) */
+#define T_OPCODE_CMP            0x4d  /* compare two integers */
+#define T_OPCODE_STRCMP         0x4e  /* compare two strings */
+#define T_OPCODE_JMP            0x4f  /* unconditional jump */
+#define T_OPCODE_JZ             0x50  /* jump if accumulator is 0 */
+#define T_OPCODE_JNZ            0x51  /* jump if accumulator is not 0 */
+#define T_OPCODE_ECHO           0x52  /* print a message to standard output */
+#define T_OPCODE_ERR            0x53  /* print an error */
+#define T_OPCODE_PERROR         0x54  /* print an error (with system error message) */
+#define T_OPCODE_BAIL           0x55  /* ... */
+#define T_OPCODE_MARK           0x56  /* ... */
+#define T_OPCODE_FS_STAT        0x57  /* check to see if a file exists */
+#define T_OPCODE_FS_FILE_P      0x58  /* is a path a regular file? */
+#define T_OPCODE_FS_SYMLINK_P   0x59  /* is a path a symbolic link? */
+#define T_OPCODE_FS_DIR_P       0x5a  /* is a path a directory? */
+#define T_OPCODE_FS_CHARDEV_P   0x5b  /* is a path a character device? */
+#define T_OPCODE_FS_BLOCKDEV_P  0x5c  /* is a path a block device? */
+#define T_OPCODE_FS_FIFO_P      0x5d  /* is a path a FIFO queue? */
+#define T_OPCODE_FS_SOCKET_P    0x5e  /* is a path a socket? */
+#define T_OPCODE_FS_READLINK    0x5f  /* get the value of a symbolic link */
+#define T_OPCODE_FS_TOUCH       0x60  /* touch a file (create or update its utime) */
+#define T_OPCODE_FS_MKDIR       0x61  /* create a new (empty) directory */
+#define T_OPCODE_FS_LINK        0x62  /* create a file link */
+#define T_OPCODE_FS_SYMLINK     0x63  /* create a symbolic link */
+#define T_OPCODE_FS_UNLINK      0x64  /* remove a file */
+#define T_OPCODE_FS_RMDIR       0x65  /* remove an empty directory */
+#define T_OPCODE_FS_RENAME      0x66  /* rename a file */
+#define T_OPCODE_FS_COPY        0x67  /* copy a file from one name to another */
+#define T_OPCODE_FS_CHOWN       0x68  /* change file ownership */
+#define T_OPCODE_FS_CHGRP       0x69  /* change file group ownership */
+#define T_OPCODE_FS_CHMOD       0x6a  /* change file permissions */
+#define T_OPCODE_FS_SHA1        0x6b  /* calculate SHA1 of a file's contents */
+#define T_OPCODE_FS_GET         0x6c  /* retrieve the contents of a local file */
+#define T_OPCODE_FS_PUT         0x6d  /* update the contents of a local file */
+#define T_OPCODE_GETFILE        0x6e  /* retrieve a file from the server */
+#define T_OPCODE_GETUID         0x6f  /* look up a user's UID, by name */
+#define T_OPCODE_GETGID         0x70  /* look up a group's GID, by name */
+#define T_OPCODE_EXEC           0x71  /* execute a command */
+#define T_OPCODE_DUMP           0x72  /* dump virtual machine state for debugging */
+#define T_OPCODE_HALT           0x73  /* halt the virtual machine */
 
 
 static const char * ASM[] = {
@@ -158,48 +173,53 @@ static const char * ASM[] = {
 	"pop",           /* T_OPCODE_POP             2  0x02 */
 	"set",           /* T_OPCODE_SET             3  0x03 */
 	"swap",          /* T_OPCODE_SWAP            4  0x04 */
-	"call",          /* T_OPCODE_CALL            5  0x05 */
-	"ret",           /* T_OPCODE_RET             6  0x06 */
-	"retv",          /* T_OPCODE_RETV            7  0x07 */
-	"cmp",           /* T_OPCODE_CMP             8  0x08 */
-	"strcmp",        /* T_OPCODE_STRCMP          9  0x09 */
-	"jmp",           /* T_OPCODE_JMP            10  0x0a */
-	"jz",            /* T_OPCODE_JZ             11  0x0b */
-	"jnz",           /* T_OPCODE_JNZ            12  0x0c */
-	"echo",          /* T_OPCODE_ECHO           13  0x0d */
-	"err",           /* T_OPCODE_ERR            14  0x0e */
-	"perror",        /* T_OPCODE_PERROR         15  0x0f */
-	"bail",          /* T_OPCODE_BAIL           16  0x10 */
-	"mark",          /* T_OPCODE_MARK           17  0x11 */
-	"fs.stat",       /* T_OPCODE_FS_STAT        18  0x12 */
-	"fs.file?",      /* T_OPCODE_FS_FILE_P      19  0x13 */
-	"fs.symlink?",   /* T_OPCODE_FS_SYMLINK_P   20  0x14 */
-	"fs.dir?",       /* T_OPCODE_FS_DIR_P       21  0x15 */
-	"fs.chardev?",   /* T_OPCODE_FS_CHARDEV_P   22  0x16 */
-	"fs.blockdev?",  /* T_OPCODE_FS_BLOCKDEV_P  23  0x17 */
-	"fs.fifo?",      /* T_OPCODE_FS_FIFO_P      24  0x18 */
-	"fs.socket?",    /* T_OPCODE_FS_SOCKET_P    25  0x19 */
-	"fs.readlink",   /* T_OPCODE_FS_READLINK    26  0x1a */
-	"fs.touch",      /* T_OPCODE_FS_TOUCH       27  0x1b */
-	"fs.mkdir",      /* T_OPCODE_FS_MKDIR       28  0x1c */
-	"fs.link",       /* T_OPCODE_FS_LINK        29  0x1d */
-	"fs.symlink",    /* T_OPCODE_FS_SYMLINK     30  0x1e */
-	"fs.unlink",     /* T_OPCODE_FS_UNLINK      31  0x1f */
-	"fs.rmdir",      /* T_OPCODE_FS_RMDIR       32  0x20 */
-	"fs.rename",     /* T_OPCODE_FS_RENAME      33  0x21 */
-	"fs.copy",       /* T_OPCODE_FS_COPY        34  0x22 */
-	"fs.chown",      /* T_OPCODE_FS_CHOWN       35  0x23 */
-	"fs.chgrp",      /* T_OPCODE_FS_CHGRP       36  0x24 */
-	"fs.chmod",      /* T_OPCODE_FS_CHMOD       37  0x25 */
-	"fs.sha1",       /* T_OPCODE_FS_SHA1        38  0x26 */
-	"fs.get",        /* T_OPCODE_FS_GET         39  0x27 */
-	"fs.put",        /* T_OPCODE_FS_PUT         40  0x28 */
-	"getfile",       /* T_OPCODE_GETFILE        41  0x29 */
-	"getuid",        /* T_OPCODE_GETUID         42  0x2a */
-	"getgid",        /* T_OPCODE_GETGID         43  0x2b */
-	"exec",          /* T_OPCODE_EXEC           44  0x2c */
-	"dump",          /* T_OPCODE_DUMP           45  0x2d */
-	"halt",          /* T_OPCODE_HALT           46  0x2e */
+	"add",           /* T_OPCODE_ADD             5  0x05 */
+	"sub",           /* T_OPCODE_SUB             6  0x06 */
+	"mult",          /* T_OPCODE_MULT            7  0x07 */
+	"div",           /* T_OPCODE_DIV             8  0x08 */
+	"mod",           /* T_OPCODE_MOD             9  0x09 */
+	"call",          /* T_OPCODE_CALL           10  0x0a */
+	"ret",           /* T_OPCODE_RET            11  0x0b */
+	"retv",          /* T_OPCODE_RETV           12  0x0c */
+	"cmp",           /* T_OPCODE_CMP            13  0x0d */
+	"strcmp",        /* T_OPCODE_STRCMP         14  0x0e */
+	"jmp",           /* T_OPCODE_JMP            15  0x0f */
+	"jz",            /* T_OPCODE_JZ             16  0x10 */
+	"jnz",           /* T_OPCODE_JNZ            17  0x11 */
+	"echo",          /* T_OPCODE_ECHO           18  0x12 */
+	"err",           /* T_OPCODE_ERR            19  0x13 */
+	"perror",        /* T_OPCODE_PERROR         20  0x14 */
+	"bail",          /* T_OPCODE_BAIL           21  0x15 */
+	"mark",          /* T_OPCODE_MARK           22  0x16 */
+	"fs.stat",       /* T_OPCODE_FS_STAT        23  0x17 */
+	"fs.file?",      /* T_OPCODE_FS_FILE_P      24  0x18 */
+	"fs.symlink?",   /* T_OPCODE_FS_SYMLINK_P   25  0x19 */
+	"fs.dir?",       /* T_OPCODE_FS_DIR_P       26  0x1a */
+	"fs.chardev?",   /* T_OPCODE_FS_CHARDEV_P   27  0x1b */
+	"fs.blockdev?",  /* T_OPCODE_FS_BLOCKDEV_P  28  0x1c */
+	"fs.fifo?",      /* T_OPCODE_FS_FIFO_P      29  0x1d */
+	"fs.socket?",    /* T_OPCODE_FS_SOCKET_P    30  0x1e */
+	"fs.readlink",   /* T_OPCODE_FS_READLINK    31  0x1f */
+	"fs.touch",      /* T_OPCODE_FS_TOUCH       32  0x20 */
+	"fs.mkdir",      /* T_OPCODE_FS_MKDIR       33  0x21 */
+	"fs.link",       /* T_OPCODE_FS_LINK        34  0x22 */
+	"fs.symlink",    /* T_OPCODE_FS_SYMLINK     35  0x23 */
+	"fs.unlink",     /* T_OPCODE_FS_UNLINK      36  0x24 */
+	"fs.rmdir",      /* T_OPCODE_FS_RMDIR       37  0x25 */
+	"fs.rename",     /* T_OPCODE_FS_RENAME      38  0x26 */
+	"fs.copy",       /* T_OPCODE_FS_COPY        39  0x27 */
+	"fs.chown",      /* T_OPCODE_FS_CHOWN       40  0x28 */
+	"fs.chgrp",      /* T_OPCODE_FS_CHGRP       41  0x29 */
+	"fs.chmod",      /* T_OPCODE_FS_CHMOD       42  0x2a */
+	"fs.sha1",       /* T_OPCODE_FS_SHA1        43  0x2b */
+	"fs.get",        /* T_OPCODE_FS_GET         44  0x2c */
+	"fs.put",        /* T_OPCODE_FS_PUT         45  0x2d */
+	"getfile",       /* T_OPCODE_GETFILE        46  0x2e */
+	"getuid",        /* T_OPCODE_GETUID         47  0x2f */
+	"getgid",        /* T_OPCODE_GETGID         48  0x30 */
+	"exec",          /* T_OPCODE_EXEC           49  0x31 */
+	"dump",          /* T_OPCODE_DUMP           50  0x32 */
+	"halt",          /* T_OPCODE_HALT           51  0x33 */
 	NULL,
 };
 
@@ -221,6 +241,11 @@ static struct {
 	{ T_OPCODE_POP,           "pop %a",                                 POP,           { ARG_REGISTER,                       ARG_NONE,                           } },
 	{ T_OPCODE_SET,           "set %a (%b|<string>|<number>)",          SET,           { ARG_REGISTER,                       ARG_REGISTER|ARG_STRING|ARG_NUMBER, } },
 	{ T_OPCODE_SWAP,          "swap %a %b",                             SWAP,          { ARG_REGISTER,                       ARG_REGISTER,                       } },
+	{ T_OPCODE_ADD,           "add %a (%b|<number>)",                   ADD,           { ARG_REGISTER,                       ARG_REGISTER|ARG_NUMBER,            } },
+	{ T_OPCODE_SUB,           "sub %a (%b|<number>)",                   SUB,           { ARG_REGISTER,                       ARG_REGISTER|ARG_NUMBER,            } },
+	{ T_OPCODE_MULT,          "mult %a (%b|<number>)",                  MULT,          { ARG_REGISTER,                       ARG_REGISTER|ARG_NUMBER,            } },
+	{ T_OPCODE_DIV,           "div %a (%b|<number>)",                   DIV,           { ARG_REGISTER,                       ARG_REGISTER|ARG_NUMBER,            } },
+	{ T_OPCODE_MOD,           "mod %a (%b|<number>)",                   MOD,           { ARG_REGISTER,                       ARG_REGISTER|ARG_NUMBER,            } },
 	{ T_OPCODE_CALL,          "call <function>",                        CALL,          { ARG_FUNCTION,                       ARG_NONE,                           } },
 	{ T_OPCODE_RET,           "ret",                                    RET,           { ARG_NONE,                           ARG_NONE,                           } },
 	{ T_OPCODE_RETV,          "retv (%a|<string>|<number>)",            RET,           { ARG_REGISTER|ARG_STRING|ARG_NUMBER, ARG_NONE,                           } },

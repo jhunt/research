@@ -160,7 +160,6 @@ int vm_exec(vm_t *vm)
 
 		switch (op) {
 		case NOOP:
-			printf("noop\n");
 			break;
 
 		case PUSH:
@@ -170,7 +169,6 @@ int vm_exec(vm_t *vm)
 			if (oper1 > NREGS)
 				B_ERR("register %08x is out of bounds", oper1);
 
-			printf("push (%08x)\n", oper1);
 			push(&vm->dstack, vm->r[oper1]);
 			break;
 
@@ -181,7 +179,6 @@ int vm_exec(vm_t *vm)
 			if (oper1 > NREGS)
 				B_ERR("register %08x is out of bounds", oper1);
 
-			printf("pop (%08x)\n", oper1);
 			vm->r[oper1] = pop(&vm->dstack);
 			break;
 
@@ -193,7 +190,6 @@ int vm_exec(vm_t *vm)
 				B_ERR("register %08x is out of bounds", oper1);
 
 			vm->r[oper1] = value_of(vm, f2, oper2);
-			printf("set (%08x) (%08x)\n", oper1, oper2);
 			break;
 
 		case SWAP:
@@ -207,7 +203,63 @@ int vm_exec(vm_t *vm)
 				B_ERR("swap requires a register index for operand 2");
 			if (oper2 > NREGS)
 				B_ERR("register %08x is out of bounds", oper2);
-			printf("swap (%08x) (%08x)\n", oper1, oper2);
+
+			if (oper1 == oper2)
+				B_ERR("swap requires distinct registers for operands");
+
+			vm->r[oper1] ^= vm->r[oper2];
+			vm->r[oper2] ^= vm->r[oper1];
+			vm->r[oper1] ^= vm->r[oper2];
+			break;
+
+		case ADD:
+			ARG2("Add");
+			if (!is_register(f1))
+				B_ERR("swap requires a register index for operand 1");
+			if (oper1 > NREGS)
+				B_ERR("register %08x is out of bounds", oper1);
+
+			vm->r[oper1] += value_of(vm, f2, oper2);
+			break;
+
+		case SUB:
+			ARG2("sub");
+			if (!is_register(f1))
+				B_ERR("swap requires a register index for operand 1");
+			if (oper1 > NREGS)
+				B_ERR("register %08x is out of bounds", oper1);
+
+			vm->r[oper1] -= value_of(vm, f2, oper2);
+			break;
+
+		case MULT:
+			ARG2("mult");
+			if (!is_register(f1))
+				B_ERR("swap requires a register index for operand 1");
+			if (oper1 > NREGS)
+				B_ERR("register %08x is out of bounds", oper1);
+
+			vm->r[oper1] *= value_of(vm, f2, oper2);
+			break;
+
+		case DIV:
+			ARG2("div");
+			if (!is_register(f1))
+				B_ERR("swap requires a register index for operand 1");
+			if (oper1 > NREGS)
+				B_ERR("register %08x is out of bounds", oper1);
+
+			vm->r[oper1] /= value_of(vm, f2, oper2);
+			break;
+
+		case MOD:
+			ARG2("mod");
+			if (!is_register(f1))
+				B_ERR("swap requires a register index for operand 1");
+			if (oper1 > NREGS)
+				B_ERR("register %08x is out of bounds", oper1);
+
+			vm->r[oper1] %= value_of(vm, f2, oper2);
 			break;
 
 		case CALL:
@@ -282,68 +334,68 @@ int vm_exec(vm_t *vm)
 
 		case BAIL:
 			ARG0("bail");
-			printf("bail\n");
+			printf("bail\n"); /* FIXME: not implemented */
 			break;
 
 		case MARK:
 			ARG0("mark");
-			printf("mark\n");
+			printf("mark\n"); /* FIXME: not implemented */
 			break;
 
 		case FS_STAT:
-			printf("fs.stat\n");
+			printf("fs.stat\n"); /* FIXME: not implemented */
 			break;
 
 		case FS_FILE_P:
-			printf("fs.file?\n");
+			printf("fs.file?\n"); /* FIXME: not implemented */
 			break;
 
 		case FS_SYMLINK_P:
-			printf("fs.symlink?\n");
+			printf("fs.symlink?\n"); /* FIXME: not implemented */
 			break;
 
 		case FS_TOUCH:
-			printf("fs.touch\n");
+			printf("fs.touch\n"); /* FIXME: not implemented */
 			break;
 
 		case FS_UNLINK:
-			printf("fs.unlink\n");
+			printf("fs.unlink\n"); /* FIXME: not implemented */
 			break;
 
 		case FS_RENAME:
-			printf("fs.rename\n");
+			printf("fs.rename\n"); /* FIXME: not implemented */
 			break;
 
 		case FS_CHOWN:
-			printf("fs.chown\n");
+			printf("fs.chown\n"); /* FIXME: not implemented */
 			break;
 
 		case FS_CHGRP:
-			printf("fs.chgrp\n");
+			printf("fs.chgrp\n"); /* FIXME: not implemented */
 			break;
 
 		case FS_CHMOD:
-			printf("fs.chmod\n");
+			printf("fs.chmod\n"); /* FIXME: not implemented */
 			break;
 
 		case FS_SHA1:
-			printf("fs.sha1\n");
+			printf("fs.sha1\n"); /* FIXME: not implemented */
 			break;
 
 		case GETFILE:
-			printf("getfile\n");
+			printf("getfile\n"); /* FIXME: not implemented */
 			break;
 
 		case GETUID:
-			printf("getuid\n");
+			printf("getuid\n"); /* FIXME: not implemented */
 			break;
 
 		case GETGID:
-			printf("getgid\n");
+			printf("getgid\n"); /* FIXME: not implemented */
 			break;
 
 		case EXEC:
-			printf("exec\n");
+			printf("exec\n"); /* FIXME: not implemented */
 			break;
 
 		case HALT:
@@ -354,8 +406,6 @@ int vm_exec(vm_t *vm)
 			ARG0("dump");
 			dump(stderr, vm);
 			break;
-
-
 
 		default:
 			B_ERR("unknown operand %02x", op);

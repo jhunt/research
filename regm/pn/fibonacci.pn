@@ -1,0 +1,25 @@
+;;
+;;
+;;
+
+fn fib
+    set %b 1
+    set %c 1
+  again:
+    cmp %a 0
+    jz end
+
+    echo "> a=%i, b=%i, c=%i\n"
+    add %b %c
+    swap %b %c
+    sub %a 1
+
+    jmp again
+
+  end:
+    push %b
+    ret
+
+fn main
+    set %a 27
+    call fib
