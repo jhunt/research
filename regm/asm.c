@@ -336,7 +336,6 @@ static int parse(void)
 		case T_OPCODE:
 			for (i = 0; ASM_SYNTAX[i].token; i++) {
 				if (p.value[0] != ASM_SYNTAX[i].token) continue;
-				fprintf(stderr, "found opcode syntax rules at %i (%02x)\n", i, ASM_SYNTAX[i].opcode);
 				op->op = ASM_SYNTAX[i].opcode;
 
 				for (j = 0; j < 2; j++) {
