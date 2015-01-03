@@ -8,7 +8,6 @@
 
 #define OPCODES_EXTENDED
 #include "opcodes.h"
-#include "asm0.c"
 
 static const char * VTYPES[] = {
 	"NONE",
