@@ -13,7 +13,7 @@ EXAMPLES_BIN := $(shell ls -1 pn/*.pn | sed -e 's/\.pn/.b/')
 
 default: $(BINARIES)
 clean:
-	rm *.o asm regm
+	rm -f *.o asm regm
 	rm -f $(EXAMPLES_BIN)
 
 test: default
