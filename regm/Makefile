@@ -1,6 +1,6 @@
 CFLAGS := -g -Wall
 LDLIBS := -lvigor
-all: regm asm
+default: regm asm
 regm: regm.o
 asm: asm.o
 
