@@ -183,6 +183,8 @@ getline:
 	}
 
 	if (isdigit(*b)) {
+		if (*b == '0' && *(b+1) == 'x')
+			b += 2;
 		while (*b && isdigit(*b)) b++;
 		if (!*b || isspace(*b)) {
 			*b++ = '\0';
@@ -348,7 +350,7 @@ static int parse(void)
 
 					} else if (p.token == T_NUMBER && ASM_SYNTAX[i].args[j] & ARG_NUMBER) {
 						op->args[j].type = VALUE_NUMBER;
-						op->args[j]._.literal = atoi(p.value);
+						op->args[j]._.literal = strtol(p.value, NULL, 0);
 
 					} else if (p.token == T_STRING && ASM_SYNTAX[i].args[j] & ARG_STRING) {
 						op->args[j].type = VALUE_STRING;
@@ -364,7 +366,7 @@ static int parse(void)
 
 					} else if (p.token == T_OFFSET && ASM_SYNTAX[i].args[j] & ARG_LABEL) {
 						op->args[j].type = VALUE_OFFSET;
-						op->args[j]._.offset = atoi(p.value);
+						op->args[j]._.offset = strtol(p.value, NULL, 10);
 
 					} else {
 						logger(LOG_CRIT, "%s: %i: invalid form; expected `%s`",
