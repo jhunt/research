@@ -13,6 +13,62 @@
 
 #include "opcodes.h"
 
+#define HEAP_ADDRMASK 0x80000000
+
+#define TYPE_LITERAL  0x1
+#define TYPE_REGISTER 0x2
+#define TYPE_ADDRESS  0x3
+
+#define is_value(fl)    ((fl) == TYPE_LITERAL)
+#define is_address(fl)  ((fl) == TYPE_ADDRESS)
+#define is_register(fl) ((fl) == TYPE_REGISTER)
+
+static void *pointerv(vm_t *vm, dword_t arg)
+{
+	heap_t *h;
+
+	if (arg & HEAP_ADDRMASK) {
+		for_each_object(h, &vm->heap, l) {
+			if (h->addr == arg) {
+				return h->data;
+			}
+		}
+	} else if (arg < vm->codesize) {
+		return (void *)(vm->code + arg);
+	}
+	return NULL;
+}
+
+static const char *stringv(vm_t *vm, byte_t type, dword_t arg)
+{
+	switch (type) {
+	case TYPE_ADDRESS:  return (char *)pointerv(vm, arg);
+	case TYPE_REGISTER: return (char *)pointerv(vm, vm->r[arg]);
+	default:            return NULL;
+	}
+}
+static dword_t value_of(vm_t *vm, byte_t type, dword_t arg)
+{
+#define BADVALUE 0x40000000
+	switch (type) {
+	case TYPE_LITERAL:
+		return arg;
+
+	case TYPE_ADDRESS:
+		if (arg & HEAP_ADDRMASK) return arg;
+		if (arg >= vm->codesize) return BADVALUE;
+		return arg;
+
+	case TYPE_REGISTER:
+		if (arg > NREGS) return BADVALUE;
+		return vm->r[arg];
+
+	default:
+		return BADVALUE;
+	}
+#undef BADVALUE
+}
+
 static void save_state(vm_t *vm)
 {
 	int i;
@@ -25,6 +81,22 @@ static void restore_state(vm_t *vm)
 	int i;
 	for (i = NREGS - 1; i >= 0; i--)
 		vm->r[i] = pop(&vm->dstack);
+}
+
+static char HEX[] = "0123456789abcdef";
+static char __bin[64 * 3 + 1];
+static char *bin(byte_t *data, size_t size)
+{
+	char *s = __bin;
+	size_t i;
+	for (i = 0; i < size && i < 64; i++) {
+		*s++ = HEX[(*data & 0xf0) >> 4];
+		*s++ = HEX[(*data & 0x0f)];
+		*s++ = ' ';
+		data++;
+	}
+	*s = '\0';
+	return __bin;
 }
 
 static void dump(FILE *io, vm_t *vm)
@@ -47,19 +119,26 @@ static void dump(FILE *io, vm_t *vm)
 
 	int i;
 	if (vm->dstack.top == 0) {
-		fprintf(io, "    data stack: <empty>\n");
+		fprintf(io, "    data: <empty>\n");
 	} else {
-		fprintf(io, "    data stack: | %04x | 0\n", vm->dstack.val[0]);
+		fprintf(io, "    data: | %08x | 0\n", vm->dstack.val[0]);
 		for (i = 1; i < vm->dstack.top; i++)
-			fprintf(io, "                | %04x | %i\n", vm->dstack.val[i], i);
+			fprintf(io, "          | %08x | %i\n", vm->dstack.val[i], i);
 	}
 
 	if (vm->istack.top == 0) {
-		fprintf(io, "    inst stack: <empty>\n");
+		fprintf(io, "    inst: <empty>\n");
 	} else {
-		fprintf(io, "    inst stack: | %04x | 0\n", vm->istack.val[0]);
+		fprintf(io, "    inst: | %08x | 0\n", vm->istack.val[0]);
 		for (i = 1; i < vm->istack.top; i++)
-			fprintf(io, "                | %04x | %i\n", vm->istack.val[i], i);
+			fprintf(io, "          | %08x | %u\n", vm->istack.val[i], i);
+	}
+
+	if (vm->heaptop != 0) {
+		fprintf(io, "    heap:\n");
+		heap_t *h;
+		for_each_object(h, &vm->heap, l)
+			fprintf(io, "          [%s] %u\n", bin(h->data, h->size), h->addr - HEAP_ADDRMASK);
 	}
 
 	fprintf(io, "    ---------------------------------------------------------------------\n\n");
@@ -67,12 +146,17 @@ static void dump(FILE *io, vm_t *vm)
 
 static int ischar(char c, const char *accept)
 {
+	assert(accept);
 	while (*accept && *accept != c) accept++;
 	return *accept == c;
 }
 
 static void vm_fprintf(vm_t *vm, FILE *out, const char *fmt)
 {
+	assert(vm);
+	assert(out);
+	assert(fmt);
+
 	char reg, type, next, *a, *b, *buf;
 	a = b = buf = strdup(fmt);
 
@@ -122,7 +206,7 @@ static void vm_fprintf(vm_t *vm, FILE *out, const char *fmt)
 
 			switch (type) {
 			case 's':
-				fprintf(out, a, (char *)(vm->code + vm->r[reg - 'a']));
+				fprintf(out, a, stringv(vm, TYPE_REGISTER, reg - 'a'));
 				break;
 			default:
 				fprintf(out, a, vm->r[reg - 'a']);
@@ -145,10 +229,34 @@ bail:
 	return;
 }
 
+static heap_t *vm_heap_alloc(vm_t *vm, size_t n)
+{
+	heap_t *h = calloc(1, sizeof(heap_t));
+	h->data   = calloc(n, sizeof(byte_t));
+	h->addr   = vm->heaptop++ | HEAP_ADDRMASK;
+	h->size   = n;
+	list_push(&vm->heap, &h->l);
+	return h;
+}
+
+static void vm_heap_free(vm_t *vm, dword_t addr)
+{
+	heap_t *h;
+	for_each_object(h, &vm->heap, l) {
+		if (h->addr != addr) continue;
+
+		list_delete(&h->l);
+		free(h->data);
+		free(h);
+		return;
+	}
+}
+
 int vm_reset(vm_t *vm)
 {
 	assert(vm);
 	memset(vm, 0, sizeof(vm_t));
+	list_init(&vm->heap);
 	return 0;
 }
 
@@ -163,6 +271,20 @@ int vm_prime(vm_t *vm, byte_t *code, size_t len)
 	return 0;
 }
 
+int vm_args(vm_t *vm, int argc, char **argv)
+{
+	assert(vm);
+	int i;
+	for (i = argc - 1; i > 0; i--) {
+		size_t n = strlen(argv[i]) + 1;
+		heap_t *h = vm_heap_alloc(vm, n);
+		memcpy(h->data, argv[i], n);
+		push(&vm->dstack, h->addr);
+	}
+	push(&vm->dstack, argc - 1);
+	return 0;
+}
+
 #define B_ERR(...) do { \
 	fprintf(stderr, "regm bytecode error: "); \
 	fprintf(stderr, __VA_ARGS__); \
@@ -173,48 +295,7 @@ int vm_prime(vm_t *vm, byte_t *code, size_t len)
 #define ARG0(s) do { if ( f1 ||  f2) B_ERR(s " takes no operands");            } while (0)
 #define ARG1(s) do { if (!f1 ||  f2) B_ERR(s " requires exactly one operand"); } while (0)
 #define ARG2(s) do { if (!f1 || !f2) B_ERR(s " requires two operands");        } while (0)
-
-#define TYPE_LITERAL  0x1
-#define TYPE_REGISTER 0x2
-#define TYPE_ADDRESS  0x3
-
-#define is_value(fl)    ((fl) == TYPE_LITERAL)
-#define is_address(fl)  ((fl) == TYPE_ADDRESS)
-#define is_register(fl) ((fl) == TYPE_REGISTER)
-
-const char *stringv(vm_t *vm, byte_t type, dword_t arg)
-{
-	switch (type) {
-	case TYPE_ADDRESS:
-		if (arg >= vm->codesize) return NULL;
-		return (char *)((uintptr_t)vm->code + arg);
-
-	case TYPE_REGISTER:
-		if (arg > NREGS) return NULL;
-		return (char *)((uintptr_t)vm->code + vm->r[arg]);
-
-	default: return NULL;
-	}
-}
-#define BADVALUE 0xffffffff
-dword_t value_of(vm_t *vm, byte_t type, dword_t arg)
-{
-	switch (type) {
-	case TYPE_LITERAL:
-		return arg;
-
-	case TYPE_ADDRESS:
-		if (arg >= vm->codesize) return BADVALUE;
-		return arg;
-
-	case TYPE_REGISTER:
-		if (arg > NREGS) return BADVALUE;
-		return vm->r[arg];
-
-	default:
-		return BADVALUE;
-	}
-}
+#define NEED_STAT(s) do { if (!vm->stat.st_ino) B_ERR(s " called without a prior fs.stat\n"); } while (0)
 
 int vm_exec(vm_t *vm)
 {
@@ -428,15 +509,50 @@ int vm_exec(vm_t *vm)
 			break;
 
 		case FS_STAT:
-			printf("fs.stat\n"); /* FIXME: not implemented */
+			ARG1("fs.stat");
+			vm->acc = lstat(stringv(vm, f1, oper1), &vm->stat);
 			break;
 
 		case FS_FILE_P:
-			printf("fs.file?\n"); /* FIXME: not implemented */
+			ARG1("fs.file?");
+			NEED_STAT("fs.file?");
+			vm->acc = S_ISREG(vm->stat.st_mode) ? 0 : 1;
 			break;
 
 		case FS_SYMLINK_P:
-			printf("fs.symlink?\n"); /* FIXME: not implemented */
+			ARG1("fs.symlink?");
+			NEED_STAT("fs.symlink?");
+			vm->acc = S_ISLNK(vm->stat.st_mode) ? 0 : 1;
+			break;
+
+		case FS_DIR_P:
+			ARG1("fs.dir?");
+			NEED_STAT("fs.dir?");
+			vm->acc = S_ISDIR(vm->stat.st_mode) ? 0 : 1;
+			break;
+
+		case FS_CHARDEV_P:
+			ARG1("fs.chardev?");
+			NEED_STAT("fs.chardev?");
+			vm->acc = S_ISCHR(vm->stat.st_mode) ? 0 : 1;
+			break;
+
+		case FS_BLOCKDEV_P:
+			ARG1("fs.blockdev?");
+			NEED_STAT("fs.blockdev?");
+			vm->acc = S_ISBLK(vm->stat.st_mode) ? 0 : 1;
+			break;
+
+		case FS_FIFO_P:
+			ARG1("fs.fifo?");
+			NEED_STAT("fs.fifo?");
+			vm->acc = S_ISFIFO(vm->stat.st_mode) ? 0 : 1;
+			break;
+
+		case FS_SOCKET_P:
+			ARG1("fs.socket?");
+			NEED_STAT("fs.socket?");
+			vm->acc = S_ISSOCK(vm->stat.st_mode) ? 0 : 1;
 			break;
 
 		case FS_TOUCH:
@@ -529,7 +645,7 @@ dword_t pop(stack_t *st)
 
 int main (int argc, char **argv)
 {
-	if (argc != 2) {
+	if (argc < 2) {
 		fprintf(stderr, "USAGE: %s asm.b\n", argv[0]);
 		return 1;
 	}
@@ -555,6 +671,9 @@ int main (int argc, char **argv)
 	assert(rc == 0);
 
 	rc = vm_prime(&vm, code, n);
+	assert(rc == 0);
+
+	rc = vm_args(&vm, argc, argv);
 	assert(rc == 0);
 
 	rc = vm_exec(&vm);

@@ -2,6 +2,9 @@
 #define REGM_H
 #include <stdint.h>
 #include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <vigor.h>
 
 /*
 
@@ -42,6 +45,13 @@ typedef struct {
 	byte_t  top;
 } stack_t;
 
+typedef struct {
+	dword_t  addr;
+	byte_t  *data;
+	size_t   size;
+	list_t   l;
+} heap_t;
+
 #define NREGS 16
 typedef struct {
 	dword_t   r[16];  /* generic registers */
@@ -50,6 +60,12 @@ typedef struct {
 
 	stack_t  dstack; /* data stack */
 	stack_t  istack; /* instruction stack */
+
+	/* auxiliary */
+	struct stat   stat;
+
+	list_t   heap;
+	dword_t  heaptop;
 
 	size_t   codesize;
 	byte_t  *code;
@@ -64,6 +80,7 @@ typedef struct {
 
 int vm_reset(vm_t *vm);
 int vm_prime(vm_t *vm, byte_t *code, size_t len);
+int vm_args(vm_t *vm, int argc, char **argv);
 int vm_exec(vm_t *vm);
 
 int push(stack_t *st, dword_t value);

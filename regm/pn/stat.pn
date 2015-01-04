@@ -1,0 +1,43 @@
+fn main
+  pop %b  ; argc
+  pop %a  ; argv[0] (program name)
+
+  cmp %b 2
+  jz +2
+  err "USAGE: %[a]s /path/to/file"
+  halt
+
+  pop %a
+  fs.stat %a
+
+  set %b "UNKNOWN"
+
+  fs.file? %a
+  jnz +1
+  set %b "regular file"
+
+  fs.dir? %a
+  jnz +1
+  set %b "directory"
+
+  fs.symlink? %a
+  jnz +1
+  set %b "symbolic link"
+
+  fs.chardev? %a
+  jnz +1
+  set %b "character device"
+
+  fs.blockdev? %a
+  jnz +1
+  set %b "block device"
+
+  fs.fifo? %a
+  jnz +1
+  set %b "fifo"
+
+  fs.socket? %a
+  jnz +1
+  set %b "socket"
+
+  echo "%[a]s: %[b]s\n"
