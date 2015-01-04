@@ -32,26 +32,38 @@
 #define FS_FIFO_P      0x1c  /* is a path a FIFO queue? */
 #define FS_SOCKET_P    0x1d  /* is a path a socket? */
 #define FS_READLINK    0x1e  /* get the value of a symbolic link */
-#define FS_TOUCH       0x1f  /* touch a file (create or update its utime) */
-#define FS_MKDIR       0x20  /* create a new (empty) directory */
-#define FS_LINK        0x21  /* create a file link */
-#define FS_SYMLINK     0x22  /* create a symbolic link */
-#define FS_UNLINK      0x23  /* remove a file */
-#define FS_RMDIR       0x24  /* remove an empty directory */
-#define FS_RENAME      0x25  /* rename a file */
-#define FS_COPY        0x26  /* copy a file from one name to another */
-#define FS_CHOWN       0x27  /* change file ownership */
-#define FS_CHGRP       0x28  /* change file group ownership */
-#define FS_CHMOD       0x29  /* change file permissions */
-#define FS_SHA1        0x2a  /* calculate SHA1 of a file's contents */
-#define FS_GET         0x2b  /* retrieve the contents of a local file */
-#define FS_PUT         0x2c  /* update the contents of a local file */
-#define GETFILE        0x2d  /* retrieve a file from the server */
-#define GETUID         0x2e  /* look up a user's UID, by name */
-#define GETGID         0x2f  /* look up a group's GID, by name */
-#define EXEC           0x30  /* execute a command */
-#define DUMP           0x31  /* dump virtual machine state for debugging */
-#define HALT           0x32  /* halt the virtual machine */
+#define FS_DEV         0x1f  /* get the ID of the device containing a file */
+#define FS_INODE       0x20  /* get the inode of a file */
+#define FS_MODE        0x21  /* get the mode (permissions) of a file */
+#define FS_NLINK       0x22  /* get the number of hard links to a file */
+#define FS_UID         0x23  /* get the UID of the file's owner */
+#define FS_GID         0x24  /* get the GID of the file's group */
+#define FS_MAJOR       0x25  /* get the device major number (char/block devices only) */
+#define FS_MINOR       0x26  /* get the device minor number (char/block devices only) */
+#define FS_SIZE        0x27  /* get the size of a file */
+#define FS_ATIME       0x28  /* get the access time of a file */
+#define FS_MTIME       0x29  /* get the modification time of a file */
+#define FS_CTIME       0x2a  /* get the inode change time of a file */
+#define FS_TOUCH       0x2b  /* touch a file (create or update its utime) */
+#define FS_MKDIR       0x2c  /* create a new (empty) directory */
+#define FS_LINK        0x2d  /* create a file link */
+#define FS_SYMLINK     0x2e  /* create a symbolic link */
+#define FS_UNLINK      0x2f  /* remove a file */
+#define FS_RMDIR       0x30  /* remove an empty directory */
+#define FS_RENAME      0x31  /* rename a file */
+#define FS_COPY        0x32  /* copy a file from one name to another */
+#define FS_CHOWN       0x33  /* change file ownership */
+#define FS_CHGRP       0x34  /* change file group ownership */
+#define FS_CHMOD       0x35  /* change file permissions */
+#define FS_SHA1        0x36  /* calculate SHA1 of a file's contents */
+#define FS_GET         0x37  /* retrieve the contents of a local file */
+#define FS_PUT         0x38  /* update the contents of a local file */
+#define GETFILE        0x39  /* retrieve a file from the server */
+#define GETUID         0x3a  /* look up a user's UID, by name */
+#define GETGID         0x3b  /* look up a group's GID, by name */
+#define EXEC           0x3c  /* execute a command */
+#define DUMP           0x3d  /* dump virtual machine state for debugging */
+#define HALT           0x3e  /* halt the virtual machine */
 
 
 #ifdef OPCODES_EXTENDED
@@ -88,26 +100,38 @@ static const char * OPCODES[] = {
 	"fs.fifo?",      /* FS_FIFO_P      28  0x1c */
 	"fs.socket?",    /* FS_SOCKET_P    29  0x1d */
 	"fs.readlink",   /* FS_READLINK    30  0x1e */
-	"fs.touch",      /* FS_TOUCH       31  0x1f */
-	"fs.mkdir",      /* FS_MKDIR       32  0x20 */
-	"fs.link",       /* FS_LINK        33  0x21 */
-	"fs.symlink",    /* FS_SYMLINK     34  0x22 */
-	"fs.unlink",     /* FS_UNLINK      35  0x23 */
-	"fs.rmdir",      /* FS_RMDIR       36  0x24 */
-	"fs.rename",     /* FS_RENAME      37  0x25 */
-	"fs.copy",       /* FS_COPY        38  0x26 */
-	"fs.chown",      /* FS_CHOWN       39  0x27 */
-	"fs.chgrp",      /* FS_CHGRP       40  0x28 */
-	"fs.chmod",      /* FS_CHMOD       41  0x29 */
-	"fs.sha1",       /* FS_SHA1        42  0x2a */
-	"fs.get",        /* FS_GET         43  0x2b */
-	"fs.put",        /* FS_PUT         44  0x2c */
-	"getfile",       /* GETFILE        45  0x2d */
-	"getuid",        /* GETUID         46  0x2e */
-	"getgid",        /* GETGID         47  0x2f */
-	"exec",          /* EXEC           48  0x30 */
-	"dump",          /* DUMP           49  0x31 */
-	"halt",          /* HALT           50  0x32 */
+	"fs.dev",        /* FS_DEV         31  0x1f */
+	"fs.inode",      /* FS_INODE       32  0x20 */
+	"fs.mode",       /* FS_MODE        33  0x21 */
+	"fs.nlink",      /* FS_NLINK       34  0x22 */
+	"fs.uid",        /* FS_UID         35  0x23 */
+	"fs.gid",        /* FS_GID         36  0x24 */
+	"fs.major",      /* FS_MAJOR       37  0x25 */
+	"fs.minor",      /* FS_MINOR       38  0x26 */
+	"fs.size",       /* FS_SIZE        39  0x27 */
+	"fs.atime",      /* FS_ATIME       40  0x28 */
+	"fs.mtime",      /* FS_MTIME       41  0x29 */
+	"fs.ctime",      /* FS_CTIME       42  0x2a */
+	"fs.touch",      /* FS_TOUCH       43  0x2b */
+	"fs.mkdir",      /* FS_MKDIR       44  0x2c */
+	"fs.link",       /* FS_LINK        45  0x2d */
+	"fs.symlink",    /* FS_SYMLINK     46  0x2e */
+	"fs.unlink",     /* FS_UNLINK      47  0x2f */
+	"fs.rmdir",      /* FS_RMDIR       48  0x30 */
+	"fs.rename",     /* FS_RENAME      49  0x31 */
+	"fs.copy",       /* FS_COPY        50  0x32 */
+	"fs.chown",      /* FS_CHOWN       51  0x33 */
+	"fs.chgrp",      /* FS_CHGRP       52  0x34 */
+	"fs.chmod",      /* FS_CHMOD       53  0x35 */
+	"fs.sha1",       /* FS_SHA1        54  0x36 */
+	"fs.get",        /* FS_GET         55  0x37 */
+	"fs.put",        /* FS_PUT         56  0x38 */
+	"getfile",       /* GETFILE        57  0x39 */
+	"getuid",        /* GETUID         58  0x3a */
+	"getgid",        /* GETGID         59  0x3b */
+	"exec",          /* EXEC           60  0x3c */
+	"dump",          /* DUMP           61  0x3d */
+	"halt",          /* HALT           62  0x3e */
 	NULL,
 };
 
@@ -145,26 +169,38 @@ static const char * OPCODES[] = {
 #define T_OPCODE_FS_FIFO_P      0x5d  /* is a path a FIFO queue? */
 #define T_OPCODE_FS_SOCKET_P    0x5e  /* is a path a socket? */
 #define T_OPCODE_FS_READLINK    0x5f  /* get the value of a symbolic link */
-#define T_OPCODE_FS_TOUCH       0x60  /* touch a file (create or update its utime) */
-#define T_OPCODE_FS_MKDIR       0x61  /* create a new (empty) directory */
-#define T_OPCODE_FS_LINK        0x62  /* create a file link */
-#define T_OPCODE_FS_SYMLINK     0x63  /* create a symbolic link */
-#define T_OPCODE_FS_UNLINK      0x64  /* remove a file */
-#define T_OPCODE_FS_RMDIR       0x65  /* remove an empty directory */
-#define T_OPCODE_FS_RENAME      0x66  /* rename a file */
-#define T_OPCODE_FS_COPY        0x67  /* copy a file from one name to another */
-#define T_OPCODE_FS_CHOWN       0x68  /* change file ownership */
-#define T_OPCODE_FS_CHGRP       0x69  /* change file group ownership */
-#define T_OPCODE_FS_CHMOD       0x6a  /* change file permissions */
-#define T_OPCODE_FS_SHA1        0x6b  /* calculate SHA1 of a file's contents */
-#define T_OPCODE_FS_GET         0x6c  /* retrieve the contents of a local file */
-#define T_OPCODE_FS_PUT         0x6d  /* update the contents of a local file */
-#define T_OPCODE_GETFILE        0x6e  /* retrieve a file from the server */
-#define T_OPCODE_GETUID         0x6f  /* look up a user's UID, by name */
-#define T_OPCODE_GETGID         0x70  /* look up a group's GID, by name */
-#define T_OPCODE_EXEC           0x71  /* execute a command */
-#define T_OPCODE_DUMP           0x72  /* dump virtual machine state for debugging */
-#define T_OPCODE_HALT           0x73  /* halt the virtual machine */
+#define T_OPCODE_FS_DEV         0x60  /* get the ID of the device containing a file */
+#define T_OPCODE_FS_INODE       0x61  /* get the inode of a file */
+#define T_OPCODE_FS_MODE        0x62  /* get the mode (permissions) of a file */
+#define T_OPCODE_FS_NLINK       0x63  /* get the number of hard links to a file */
+#define T_OPCODE_FS_UID         0x64  /* get the UID of the file's owner */
+#define T_OPCODE_FS_GID         0x65  /* get the GID of the file's group */
+#define T_OPCODE_FS_MAJOR       0x66  /* get the device major number (char/block devices only) */
+#define T_OPCODE_FS_MINOR       0x67  /* get the device minor number (char/block devices only) */
+#define T_OPCODE_FS_SIZE        0x68  /* get the size of a file */
+#define T_OPCODE_FS_ATIME       0x69  /* get the access time of a file */
+#define T_OPCODE_FS_MTIME       0x6a  /* get the modification time of a file */
+#define T_OPCODE_FS_CTIME       0x6b  /* get the inode change time of a file */
+#define T_OPCODE_FS_TOUCH       0x6c  /* touch a file (create or update its utime) */
+#define T_OPCODE_FS_MKDIR       0x6d  /* create a new (empty) directory */
+#define T_OPCODE_FS_LINK        0x6e  /* create a file link */
+#define T_OPCODE_FS_SYMLINK     0x6f  /* create a symbolic link */
+#define T_OPCODE_FS_UNLINK      0x70  /* remove a file */
+#define T_OPCODE_FS_RMDIR       0x71  /* remove an empty directory */
+#define T_OPCODE_FS_RENAME      0x72  /* rename a file */
+#define T_OPCODE_FS_COPY        0x73  /* copy a file from one name to another */
+#define T_OPCODE_FS_CHOWN       0x74  /* change file ownership */
+#define T_OPCODE_FS_CHGRP       0x75  /* change file group ownership */
+#define T_OPCODE_FS_CHMOD       0x76  /* change file permissions */
+#define T_OPCODE_FS_SHA1        0x77  /* calculate SHA1 of a file's contents */
+#define T_OPCODE_FS_GET         0x78  /* retrieve the contents of a local file */
+#define T_OPCODE_FS_PUT         0x79  /* update the contents of a local file */
+#define T_OPCODE_GETFILE        0x7a  /* retrieve a file from the server */
+#define T_OPCODE_GETUID         0x7b  /* look up a user's UID, by name */
+#define T_OPCODE_GETGID         0x7c  /* look up a group's GID, by name */
+#define T_OPCODE_EXEC           0x7d  /* execute a command */
+#define T_OPCODE_DUMP           0x7e  /* dump virtual machine state for debugging */
+#define T_OPCODE_HALT           0x7f  /* halt the virtual machine */
 
 
 static const char * ASM[] = {
@@ -200,26 +236,38 @@ static const char * ASM[] = {
 	"fs.fifo?",      /* T_OPCODE_FS_FIFO_P      29  0x1d */
 	"fs.socket?",    /* T_OPCODE_FS_SOCKET_P    30  0x1e */
 	"fs.readlink",   /* T_OPCODE_FS_READLINK    31  0x1f */
-	"fs.touch",      /* T_OPCODE_FS_TOUCH       32  0x20 */
-	"fs.mkdir",      /* T_OPCODE_FS_MKDIR       33  0x21 */
-	"fs.link",       /* T_OPCODE_FS_LINK        34  0x22 */
-	"fs.symlink",    /* T_OPCODE_FS_SYMLINK     35  0x23 */
-	"fs.unlink",     /* T_OPCODE_FS_UNLINK      36  0x24 */
-	"fs.rmdir",      /* T_OPCODE_FS_RMDIR       37  0x25 */
-	"fs.rename",     /* T_OPCODE_FS_RENAME      38  0x26 */
-	"fs.copy",       /* T_OPCODE_FS_COPY        39  0x27 */
-	"fs.chown",      /* T_OPCODE_FS_CHOWN       40  0x28 */
-	"fs.chgrp",      /* T_OPCODE_FS_CHGRP       41  0x29 */
-	"fs.chmod",      /* T_OPCODE_FS_CHMOD       42  0x2a */
-	"fs.sha1",       /* T_OPCODE_FS_SHA1        43  0x2b */
-	"fs.get",        /* T_OPCODE_FS_GET         44  0x2c */
-	"fs.put",        /* T_OPCODE_FS_PUT         45  0x2d */
-	"getfile",       /* T_OPCODE_GETFILE        46  0x2e */
-	"getuid",        /* T_OPCODE_GETUID         47  0x2f */
-	"getgid",        /* T_OPCODE_GETGID         48  0x30 */
-	"exec",          /* T_OPCODE_EXEC           49  0x31 */
-	"dump",          /* T_OPCODE_DUMP           50  0x32 */
-	"halt",          /* T_OPCODE_HALT           51  0x33 */
+	"fs.dev",        /* T_OPCODE_FS_DEV         32  0x20 */
+	"fs.inode",      /* T_OPCODE_FS_INODE       33  0x21 */
+	"fs.mode",       /* T_OPCODE_FS_MODE        34  0x22 */
+	"fs.nlink",      /* T_OPCODE_FS_NLINK       35  0x23 */
+	"fs.uid",        /* T_OPCODE_FS_UID         36  0x24 */
+	"fs.gid",        /* T_OPCODE_FS_GID         37  0x25 */
+	"fs.major",      /* T_OPCODE_FS_MAJOR       38  0x26 */
+	"fs.minor",      /* T_OPCODE_FS_MINOR       39  0x27 */
+	"fs.size",       /* T_OPCODE_FS_SIZE        40  0x28 */
+	"fs.atime",      /* T_OPCODE_FS_ATIME       41  0x29 */
+	"fs.mtime",      /* T_OPCODE_FS_MTIME       42  0x2a */
+	"fs.ctime",      /* T_OPCODE_FS_CTIME       43  0x2b */
+	"fs.touch",      /* T_OPCODE_FS_TOUCH       44  0x2c */
+	"fs.mkdir",      /* T_OPCODE_FS_MKDIR       45  0x2d */
+	"fs.link",       /* T_OPCODE_FS_LINK        46  0x2e */
+	"fs.symlink",    /* T_OPCODE_FS_SYMLINK     47  0x2f */
+	"fs.unlink",     /* T_OPCODE_FS_UNLINK      48  0x30 */
+	"fs.rmdir",      /* T_OPCODE_FS_RMDIR       49  0x31 */
+	"fs.rename",     /* T_OPCODE_FS_RENAME      50  0x32 */
+	"fs.copy",       /* T_OPCODE_FS_COPY        51  0x33 */
+	"fs.chown",      /* T_OPCODE_FS_CHOWN       52  0x34 */
+	"fs.chgrp",      /* T_OPCODE_FS_CHGRP       53  0x35 */
+	"fs.chmod",      /* T_OPCODE_FS_CHMOD       54  0x36 */
+	"fs.sha1",       /* T_OPCODE_FS_SHA1        55  0x37 */
+	"fs.get",        /* T_OPCODE_FS_GET         56  0x38 */
+	"fs.put",        /* T_OPCODE_FS_PUT         57  0x39 */
+	"getfile",       /* T_OPCODE_GETFILE        58  0x3a */
+	"getuid",        /* T_OPCODE_GETUID         59  0x3b */
+	"getgid",        /* T_OPCODE_GETGID         60  0x3c */
+	"exec",          /* T_OPCODE_EXEC           61  0x3d */
+	"dump",          /* T_OPCODE_DUMP           62  0x3e */
+	"halt",          /* T_OPCODE_HALT           63  0x3f */
 	NULL,
 };
 
@@ -268,6 +316,18 @@ static struct {
 	{ T_OPCODE_FS_FIFO_P,     "fs.fifo? (%a|<string>)",                 FS_FIFO_P,     { ARG_REGISTER|ARG_STRING,            ARG_NONE,                           } },
 	{ T_OPCODE_FS_SOCKET_P,   "fs.socket? (%a|<string>)",               FS_SOCKET_P,   { ARG_REGISTER|ARG_STRING,            ARG_NONE,                           } },
 	{ T_OPCODE_FS_READLINK,   "fs.readlink (%a|<string>) %b",           FS_READLINK,   { ARG_REGISTER|ARG_STRING,            ARG_REGISTER,                       } },
+	{ T_OPCODE_FS_DEV,        "fs.dev (%a|<string>) %b",                FS_DEV,        { ARG_REGISTER|ARG_STRING,            ARG_REGISTER,                       } },
+	{ T_OPCODE_FS_INODE,      "fs.inode (%a|<string>) %b",              FS_INODE,      { ARG_REGISTER|ARG_STRING,            ARG_REGISTER,                       } },
+	{ T_OPCODE_FS_MODE,       "fs.mode (%a|<string>) %b",               FS_MODE,       { ARG_REGISTER|ARG_STRING,            ARG_REGISTER,                       } },
+	{ T_OPCODE_FS_NLINK,      "fs.nlink (%a|<string>) %b",              FS_NLINK,      { ARG_REGISTER|ARG_STRING,            ARG_REGISTER,                       } },
+	{ T_OPCODE_FS_UID,        "fs.uid (%a|<string>) %b",                FS_UID,        { ARG_REGISTER|ARG_STRING,            ARG_REGISTER,                       } },
+	{ T_OPCODE_FS_GID,        "fs.gid (%a|<string>) %b",                FS_GID,        { ARG_REGISTER|ARG_STRING,            ARG_REGISTER,                       } },
+	{ T_OPCODE_FS_MAJOR,      "fs.major (%a|<string>) %b",              FS_MAJOR,      { ARG_REGISTER|ARG_STRING,            ARG_REGISTER,                       } },
+	{ T_OPCODE_FS_MINOR,      "fs.minor (%a|<string>) %b",              FS_MINOR,      { ARG_REGISTER|ARG_STRING,            ARG_REGISTER,                       } },
+	{ T_OPCODE_FS_SIZE,       "fs.size (%a|<string>) %b",               FS_SIZE,       { ARG_REGISTER|ARG_STRING,            ARG_REGISTER,                       } },
+	{ T_OPCODE_FS_ATIME,      "fs.atime (%a|<string>) %b",              FS_ATIME,      { ARG_REGISTER|ARG_STRING,            ARG_REGISTER,                       } },
+	{ T_OPCODE_FS_MTIME,      "fs.mtime (%a|<string>) %b",              FS_MTIME,      { ARG_REGISTER|ARG_STRING,            ARG_REGISTER,                       } },
+	{ T_OPCODE_FS_CTIME,      "fs.ctime (%a|<string>) %b",              FS_CTIME,      { ARG_REGISTER|ARG_STRING,            ARG_REGISTER,                       } },
 	{ T_OPCODE_FS_TOUCH,      "fs.touch (%a|<string>)",                 FS_TOUCH,      { ARG_REGISTER|ARG_STRING,            ARG_NONE,                           } },
 	{ T_OPCODE_FS_MKDIR,      "fs.mkdir (%a|<string>)",                 FS_MKDIR,      { ARG_REGISTER|ARG_STRING,            ARG_NONE,                           } },
 	{ T_OPCODE_FS_LINK,       "fs.link (%a|<string>) (%b|<string>)",    FS_LINK,       { ARG_REGISTER|ARG_STRING,            ARG_REGISTER|ARG_STRING,            } },

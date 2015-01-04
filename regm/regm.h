@@ -1,5 +1,6 @@
 #ifndef REGM_H
 #define REGM_H
+#define _BSD_SOURCE
 #include <stdint.h>
 #include <sys/types.h>
 #include <sys/stat.h>

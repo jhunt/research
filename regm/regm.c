@@ -583,6 +583,138 @@ int vm_exec(vm_t *vm)
 			printf("fs.sha1\n"); /* FIXME: not implemented */
 			break;
 
+		case FS_DEV:
+			ARG2("fs.dev");
+			NEED_STAT("fs.dev");
+			if (!is_register(f2))
+				B_ERR("fs.dev requires a register index for operand 2");
+			if (oper2 > NREGS)
+				B_ERR("register %08x is out of bounds", oper2);
+
+			vm->r[oper2] = vm->stat.st_dev;
+			break;
+
+		case FS_INODE:
+			ARG2("fs.inode");
+			NEED_STAT("fs.inode");
+			if (!is_register(f2))
+				B_ERR("fs.inode requires a register index for operand 2");
+			if (oper2 > NREGS)
+				B_ERR("register %08x is out of bounds", oper2);
+
+			vm->r[oper2] = vm->stat.st_ino;
+			break;
+
+		case FS_MODE:
+			ARG2("fs.mode");
+			NEED_STAT("fs.mode");
+			if (!is_register(f2))
+				B_ERR("fs.mode requires a register index for operand 2");
+			if (oper2 > NREGS)
+				B_ERR("register %08x is out of bounds", oper2);
+
+			vm->r[oper2] = vm->stat.st_mode;
+			break;
+
+		case FS_NLINK:
+			ARG2("fs.nlink");
+			NEED_STAT("fs.nlink");
+			if (!is_register(f2))
+				B_ERR("fs.nlink requires a register index for operand 2");
+			if (oper2 > NREGS)
+				B_ERR("register %08x is out of bounds", oper2);
+
+			vm->r[oper2] = vm->stat.st_nlink;
+			break;
+
+		case FS_UID:
+			ARG2("fs.uid");
+			NEED_STAT("fs.uid");
+			if (!is_register(f2))
+				B_ERR("fs.uid requires a register index for operand 2");
+			if (oper2 > NREGS)
+				B_ERR("register %08x is out of bounds", oper2);
+
+			vm->r[oper2] = vm->stat.st_uid;
+			break;
+
+		case FS_GID:
+			ARG2("fs.gid");
+			NEED_STAT("fs.gid");
+			if (!is_register(f2))
+				B_ERR("fs.gid requires a register index for operand 2");
+			if (oper2 > NREGS)
+				B_ERR("register %08x is out of bounds", oper2);
+
+			vm->r[oper2] = vm->stat.st_gid;
+			break;
+
+		case FS_MAJOR:
+			ARG2("fs.major");
+			NEED_STAT("fs.major");
+			if (!is_register(f2))
+				B_ERR("fs.major requires a register index for operand 2");
+			if (oper2 > NREGS)
+				B_ERR("register %08x is out of bounds", oper2);
+
+			vm->r[oper2] = major(vm->stat.st_rdev);
+			break;
+
+		case FS_MINOR:
+			ARG2("fs.minor");
+			NEED_STAT("fs.minor");
+			if (!is_register(f2))
+				B_ERR("fs.minor requires a register index for operand 2");
+			if (oper2 > NREGS)
+				B_ERR("register %08x is out of bounds", oper2);
+
+			vm->r[oper2] = minor(vm->stat.st_rdev);
+			break;
+
+		case FS_SIZE:
+			ARG2("fs.size");
+			NEED_STAT("fs.size");
+			if (!is_register(f2))
+				B_ERR("fs.size requires a register index for operand 2");
+			if (oper2 > NREGS)
+				B_ERR("register %08x is out of bounds", oper2);
+
+			vm->r[oper2] = vm->stat.st_blocks * vm->stat.st_blksize;
+			break;
+
+		case FS_ATIME:
+			ARG2("fs.atime");
+			NEED_STAT("fs.atime");
+			if (!is_register(f2))
+				B_ERR("fs.atime requires a register index for operand 2");
+			if (oper2 > NREGS)
+				B_ERR("register %08x is out of bounds", oper2);
+
+			vm->r[oper2] = vm->stat.st_atime;
+			break;
+
+		case FS_MTIME:
+			ARG2("fs.mtime");
+			NEED_STAT("fs.mtime");
+			if (!is_register(f2))
+				B_ERR("fs.mtime requires a register index for operand 2");
+			if (oper2 > NREGS)
+				B_ERR("register %08x is out of bounds", oper2);
+
+			vm->r[oper2] = vm->stat.st_mtime;
+			break;
+
+		case FS_CTIME:
+			ARG2("fs.ctime");
+			NEED_STAT("fs.ctime");
+			if (!is_register(f2))
+				B_ERR("fs.ctime requires a register index for operand 2");
+			if (oper2 > NREGS)
+				B_ERR("register %08x is out of bounds", oper2);
+
+			vm->r[oper2] = vm->stat.st_ctime;
+			break;
+
 		case GETFILE:
 			printf("getfile\n"); /* FIXME: not implemented */
 			break;
