@@ -9,6 +9,7 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <errno.h>
+#include <ctype.h>
 
 #include "opcodes.h"
 
@@ -62,6 +63,86 @@ static void dump(FILE *io, vm_t *vm)
 	}
 
 	fprintf(io, "    ---------------------------------------------------------------------\n\n");
+}
+
+static int ischar(char c, const char *accept)
+{
+	while (*accept && *accept != c) accept++;
+	return *accept == c;
+}
+
+static void vm_fprintf(vm_t *vm, FILE *out, const char *fmt)
+{
+	char reg, type, next, *a, *b, *buf;
+	a = b = buf = strdup(fmt);
+
+#define ADVANCE do { \
+	b++; \
+	if (!*b) { \
+		fprintf(stderr, "<< unexpected end of format string >>\n"); \
+		free(buf); return; \
+	} \
+} while (0)
+
+	while (*b) {
+		if (*b == '%') {
+			if (*(b+1) == '%') { /* %% == % */
+				*++b = '\0';
+				fprintf(out, "%s", a);
+				a = ++b;
+				continue;
+			}
+			*b = '\0';
+			ADVANCE;
+			fprintf(out, "%s", a);
+
+			if (*b != '[') {
+				fprintf(stderr, "<< invalid format specifier >>\n");
+				goto bail;
+			}
+
+			ADVANCE;
+			if (*b < 'a' || *b >= 'a' + NREGS) {
+				fprintf(stderr, "<< invalid register %%%c >>\n", *b);
+				goto bail;
+			}
+			reg = *b;
+
+			ADVANCE;
+			if (*b != ']') {
+				fprintf(stderr, "<< invalid format specifier >>\n");
+				goto bail;
+			}
+			a = b; *a = '%';
+
+			while (*b && !ischar(*b, "sdiouxX"))
+				ADVANCE;
+			type = *b; b++;
+			next = *b; *b = '\0';
+
+			switch (type) {
+			case 's':
+				fprintf(out, a, (char *)(vm->code + vm->r[reg - 'a']));
+				break;
+			default:
+				fprintf(out, a, vm->r[reg - 'a']);
+				break;
+			}
+
+			*b = next;
+			a = b;
+			continue;
+		}
+		b++;
+	}
+	if (*a)
+		fprintf(out, "%s", a);
+
+#undef ADVANCE
+
+bail:
+	free(buf);
+	return;
 }
 
 int vm_reset(vm_t *vm)
@@ -321,21 +402,18 @@ int vm_exec(vm_t *vm)
 
 		case ECHO:
 			ARG1("echo");
-			printf(stringv(vm, f1, oper1),
-				vm->r[0], vm->r[1], vm->r[2], vm->r[3], vm->r[4], vm->r[5]);
+			vm_fprintf(vm, stdout, stringv(vm, f1, oper1));
 			break;
 
 		case ERR:
 			ARG1("err");
-			fprintf(stderr, stringv(vm, f1, oper1),
-				vm->r[0], vm->r[1], vm->r[2], vm->r[3], vm->r[4], vm->r[5]);
+			vm_fprintf(vm, stderr, stringv(vm, f1, oper1));
 			fprintf(stderr, "\n");
 			break;
 
 		case PERROR:
 			ARG1("perror");
-			fprintf(stderr, stringv(vm, f1, oper1),
-				vm->r[0], vm->r[1], vm->r[2], vm->r[3], vm->r[4], vm->r[5]);
+			vm_fprintf(vm, stderr, stringv(vm, f1, oper1));
 			fprintf(stderr, ": (%i) %s\n", errno, strerror(errno));
 			break;
 
