@@ -83,6 +83,12 @@
     args:
       - [label]
 
+- str:
+    help: format a (heap-allocated) string
+    args:
+      - [string, register]
+      - [register]
+
 - echo:
     help: print a message to standard output
     args:
@@ -284,6 +290,99 @@
     args:
       - [register, string]
       - [register]
+
+- passwd.open:
+    help: open the passwd/shadow (and group) databases for reading or writing
+- passwd.save:
+    help: writes the passwd/shadow (and group) databases to disk
+- passwd.close:
+    help: closes the passwd/shadow (and group) databases, without writing them to disk
+- passwd.nextuid:
+    help: return the next available UID into a register
+    args:
+      - [register]
+- passwd.nextgid:
+    help: return the next available GID into a register
+    args:
+      - [register]
+
+- user.find:
+    help: find a user by username, storing the UID into a register
+    args:
+      - [register, string]
+      - [register]
+- user.get:
+    help: retrieve the value of an attribute from the last found user
+    args:
+      - [register, string]
+      - [register, string, number]
+- user.set:
+    help: set an attribute on the last found user
+    args:
+      - [register, string]
+      - [register, string, number]
+- user.new:
+    help: allocate a new (unsaved) user object
+    args:
+      - [register, number]
+      - [register, string]
+- user.save:
+    help: commit changes to the current user object (in-memory only)
+- user.delete:
+    help: remove the current user from the (in-memory) database
+
+- group.find:
+    help: find a group by name, storing the GID into a register
+    args:
+      - [register, string]
+      - [register]
+- group.get:
+    help: retrieve the value of an attribute from the last found group
+    args:
+      - [register, string]
+      - [register, string, number]
+- group.set:
+    help: set an attribute on the last found group
+    args:
+      - [register, string]
+      - [register, string, number]
+- group.new:
+    help: allocate a new (unsaved) group object
+    args:
+      - [register, number]
+      - [register, string]
+- group.save:
+    help: commit changes to the current group object (in-memory only)
+- group.delete:
+    help: remove the current group from the (in-memory) database
+
+- augeas.init:
+    help: initialize the augeas system
+- augeas.done:
+    help: de-initializes the augeas system
+- augeas.err:
+    help: print a helpful augeas error message
+- augeas.write:
+    help: write all pending changes to disk
+- augeas.set:
+    help: set the value of a file/key
+    args:
+      - [register, string]
+      - [register, string]
+- augeas.get:
+    help: retrieve the value of a file/key
+    args:
+      - [register, string]
+      - [register]
+- augeas.find:
+    help: search for and retrieve the value of file/key
+    args:
+      - [register, string]
+      - [register]
+- augeas.remove:
+    help: remove a file/key
+    args:
+      - [register, string]
 
 - exec:
     help: execute a command
