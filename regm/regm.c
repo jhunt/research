@@ -556,27 +556,33 @@ int vm_exec(vm_t *vm)
 			break;
 
 		case FS_TOUCH:
-			printf("fs.touch\n"); /* FIXME: not implemented */
+			ARG1("fs.touch");
+			vm->acc = close(open(stringv(vm, f1, oper1), O_CREAT, 0777));
 			break;
 
 		case FS_UNLINK:
-			printf("fs.unlink\n"); /* FIXME: not implemented */
+			ARG1("fs.unlink");
+			vm->acc = unlink(stringv(vm, f1, oper1));
 			break;
 
 		case FS_RENAME:
-			printf("fs.rename\n"); /* FIXME: not implemented */
+			ARG2("fs.rename");
+			vm->acc = rename(stringv(vm, f1, oper1), stringv(vm, f2, oper2));
 			break;
 
 		case FS_CHOWN:
-			printf("fs.chown\n"); /* FIXME: not implemented */
+			ARG2("fs.chown");
+			vm->acc = lchown(stringv(vm, f1, oper1), value_of(vm, f2, oper2), -1);
 			break;
 
 		case FS_CHGRP:
-			printf("fs.chgrp\n"); /* FIXME: not implemented */
+			ARG2("fs.chgrp");
+			vm->acc = lchown(stringv(vm, f1, oper1), -1, value_of(vm, f2, oper2));
 			break;
 
 		case FS_CHMOD:
-			printf("fs.chmod\n"); /* FIXME: not implemented */
+			ARG2("fs.chmod");
+			vm->acc = chmod(stringv(vm, f1, oper1), value_of(vm, f2, oper2) & 0x7777);
 			break;
 
 		case FS_SHA1:
