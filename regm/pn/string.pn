@@ -1,0 +1,11 @@
+;;
+;; test the string formatter
+;;
+
+fn main
+  set %a "Hello"
+  set %b "World"
+  set %c 0
+
+  str  "%[c]i: %[a]s, %[b]s!\n" %d
+  echo "%[d]s"

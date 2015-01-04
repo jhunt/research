@@ -99,6 +99,30 @@ static char *bin(byte_t *data, size_t size)
 	return __bin;
 }
 
+static heap_t *vm_heap_alloc(vm_t *vm, size_t n)
+{
+	heap_t *h = calloc(1, sizeof(heap_t));
+	h->addr   = vm->heaptop++ | HEAP_ADDRMASK;
+	h->size   = n;
+	if (n)
+		h->data = calloc(n, sizeof(byte_t));
+	list_push(&vm->heap, &h->l);
+	return h;
+}
+
+static void vm_heap_free(vm_t *vm, dword_t addr)
+{
+	heap_t *h;
+	for_each_object(h, &vm->heap, l) {
+		if (h->addr != addr) continue;
+
+		list_delete(&h->l);
+		free(h->data);
+		free(h);
+		return;
+	}
+}
+
 static void dump(FILE *io, vm_t *vm)
 {
 	fprintf(io, "\n");
@@ -151,50 +175,49 @@ static int ischar(char c, const char *accept)
 	return *accept == c;
 }
 
-static void vm_fprintf(vm_t *vm, FILE *out, const char *fmt)
+static char *_sprintf(vm_t *vm, const char *fmt)
 {
 	assert(vm);
-	assert(out);
 	assert(fmt);
 
-	char reg, type, next, *a, *b, *buf;
-	a = b = buf = strdup(fmt);
+	size_t n;
+	char reg, type, next, *a, *b, *buf, *s, *s1;
 
 #define ADVANCE do { \
 	b++; \
 	if (!*b) { \
 		fprintf(stderr, "<< unexpected end of format string >>\n"); \
-		free(buf); return; \
+		free(buf); return NULL; \
 	} \
 } while (0)
 
+	a = b = buf = strdup(fmt);
+	n = 0;
 	while (*b) {
 		if (*b == '%') {
-			if (*(b+1) == '%') { /* %% == % */
-				*++b = '\0';
-				fprintf(out, "%s", a);
-				a = ++b;
+			ADVANCE;
+			if (*b == '%') {
+				n++;
 				continue;
 			}
-			*b = '\0';
-			ADVANCE;
-			fprintf(out, "%s", a);
-
 			if (*b != '[') {
-				fprintf(stderr, "<< invalid format specifier >>\n");
+				fprintf(stderr, "<< %s >>\n", fmt);
+				fprintf(stderr, "<< invalid format specifier, '[' != '%c', offset:%li >>\n", *b, b - a + 1);
 				goto bail;
 			}
 
 			ADVANCE;
 			if (*b < 'a' || *b >= 'a' + NREGS) {
-				fprintf(stderr, "<< invalid register %%%c >>\n", *b);
+				fprintf(stderr, "<< %s >>\n", fmt);
+				fprintf(stderr, "<< invalid register %%%c, offset:%li >>\n", *b, b - a + 1);
 				goto bail;
 			}
 			reg = *b;
 
 			ADVANCE;
 			if (*b != ']') {
-				fprintf(stderr, "<< invalid format specifier >>\n");
+				fprintf(stderr, "<< %s >>\n", fmt);
+				fprintf(stderr, "<< invalid format specifier, ']' != '%c', offset:%li >>\n", *b, b - a + 1);
 				goto bail;
 			}
 			a = b; *a = '%';
@@ -206,10 +229,10 @@ static void vm_fprintf(vm_t *vm, FILE *out, const char *fmt)
 
 			switch (type) {
 			case 's':
-				fprintf(out, a, stringv(vm, TYPE_REGISTER, reg - 'a'));
+				n += snprintf(NULL, 0, a, stringv(vm, TYPE_REGISTER, reg - 'a'));
 				break;
 			default:
-				fprintf(out, a, vm->r[reg - 'a']);
+				n += snprintf(NULL, 0, a, vm->r[reg - 'a']);
 				break;
 			}
 
@@ -218,38 +241,73 @@ static void vm_fprintf(vm_t *vm, FILE *out, const char *fmt)
 			continue;
 		}
 		b++;
+		n++;
 	}
-	if (*a)
-		fprintf(out, "%s", a);
 
+	s = s1 = calloc(n + 1, sizeof(char));
+	a = b = buf;
+	while (*b) {
+		if (*b == '%') {
+			if (*(b+1) == '%') { /* %% == % */
+				*++b = '\0';
+				a = ++b;
+				*s++ = '%';
+				continue;
+			}
+			*b = '\0';
+			ADVANCE; /* [    */
+			ADVANCE; /*  %r  */  reg = *b;
+			ADVANCE; /*    ] */  a = b; *a = '%';
+
+			while (*b && !ischar(*b, "sdiouxX"))
+				ADVANCE;
+			type = *b; b++;
+			next = *b; *b = '\0';
+
+			switch (type) {
+			case 's':
+				s += snprintf(s, n - (s - s1) + 1, a, stringv(vm, TYPE_REGISTER, reg - 'a'));
+				break;
+			default:
+				s += snprintf(s, n - (s - s1) + 1, a, vm->r[reg - 'a']);
+				break;
+			}
+
+			*b = next;
+			a = b;
+			continue;
+		}
+		*s++ = *b++;
+	}
 #undef ADVANCE
 
 bail:
 	free(buf);
+	return s1;
+}
+
+static dword_t vm_sprintf(vm_t *vm, const char *fmt)
+{
+	assert(vm);
+	assert(fmt);
+
+	char *s = _sprintf(vm, fmt);
+	heap_t *h = vm_heap_alloc(vm, 0);
+	h->data = (byte_t *)s;
+	h->size = strlen(s + 1);
+	return h->addr;
+}
+
+static void vm_fprintf(vm_t *vm, FILE *out, const char *fmt)
+{
+	assert(vm);
+	assert(out);
+	assert(fmt);
+
+	char *s = _sprintf(vm, fmt);
+	fprintf(out, "%s", s);
+	free(s);
 	return;
-}
-
-static heap_t *vm_heap_alloc(vm_t *vm, size_t n)
-{
-	heap_t *h = calloc(1, sizeof(heap_t));
-	h->data   = calloc(n, sizeof(byte_t));
-	h->addr   = vm->heaptop++ | HEAP_ADDRMASK;
-	h->size   = n;
-	list_push(&vm->heap, &h->l);
-	return h;
-}
-
-static void vm_heap_free(vm_t *vm, dword_t addr)
-{
-	heap_t *h;
-	for_each_object(h, &vm->heap, l) {
-		if (h->addr != addr) continue;
-
-		list_delete(&h->l);
-		free(h->data);
-		free(h);
-		return;
-	}
 }
 
 int vm_reset(vm_t *vm)
@@ -479,6 +537,16 @@ int vm_exec(vm_t *vm)
 		case JNZ:
 			ARG1("jnz");
 			if (vm->acc != 0) vm->pc = value_of(vm, f1, oper1);
+			break;
+
+		case STR:
+			ARG2("str");
+			if (!is_register(f2))
+				B_ERR("str requires a register index for operand 2");
+			if (oper2 > NREGS)
+				B_ERR("register %08x is out of bounds", oper2);
+
+			vm->r[oper2] = vm_sprintf(vm, stringv(vm, f1, oper1));
 			break;
 
 		case ECHO:
