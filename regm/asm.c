@@ -183,9 +183,12 @@ getline:
 	}
 
 	if (isdigit(*b)) {
-		if (*b == '0' && *(b+1) == 'x')
+		if (*b == '0' && *(b+1) == 'x') {
 			b += 2;
-		while (*b && isdigit(*b)) b++;
+			while (*b && isxdigit(*b)) b++;
+		} else {
+			while (*b && isdigit(*b)) b++;
+		}
 		if (!*b || isspace(*b)) {
 			*b++ = '\0';
 

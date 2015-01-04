@@ -5,3 +5,6 @@ fn main
 
   set %a 0x4242
   echo "4242 = %[a]04x\n"
+
+  set %a 0xdecafbad
+  echo "coffee = %[a]x\n"
