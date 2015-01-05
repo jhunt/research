@@ -110,19 +110,6 @@ static heap_t *vm_heap_alloc(vm_t *vm, size_t n)
 	return h;
 }
 
-static void vm_heap_free(vm_t *vm, dword_t addr)
-{
-	heap_t *h;
-	for_each_object(h, &vm->heap, l) {
-		if (h->addr != addr) continue;
-
-		list_delete(&h->l);
-		free(h->data);
-		free(h);
-		return;
-	}
-}
-
 static void dump(FILE *io, vm_t *vm)
 {
 	fprintf(io, "\n");
@@ -821,6 +808,17 @@ int vm_exec(vm_t *vm)
 	}
 }
 
+int vm_done(vm_t *vm)
+{
+	heap_t *h, *tmp;
+	for_each_object_safe(h, tmp, &vm->heap, l) {
+		list_delete(&h->l);
+		free(h->data);
+		free(h);
+	}
+	return 0;
+}
+
 int empty(stack_t *st)
 {
 	return st->top == 0;
@@ -883,6 +881,9 @@ int main (int argc, char **argv)
 	assert(rc == 0);
 
 	rc = vm_exec(&vm);
+	assert(rc == 0);
+
+	rc = vm_done(&vm);
 	assert(rc == 0);
 
 	return 0;
