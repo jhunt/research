@@ -526,6 +526,42 @@ int vm_exec(vm_t *vm)
 			if (vm->acc != 0) vm->pc = value_of(vm, f1, oper1);
 			break;
 
+		case JE:
+			ARG2("je");
+			if (vm->acc == value_of(vm, f1, oper1))
+				vm->pc = value_of(vm, f2, oper2);
+			break;
+
+		case JNE:
+			ARG2("jne");
+			if (vm->acc != value_of(vm, f1, oper1))
+				vm->pc = value_of(vm, f2, oper2);
+			break;
+
+		case JGT:
+			ARG2("jgt");
+			if (vm->acc > value_of(vm, f1, oper1))
+				vm->pc = value_of(vm, f2, oper2);
+			break;
+
+		case JGTE:
+			ARG2("jgte");
+			if (vm->acc >= value_of(vm, f1, oper1))
+				vm->pc = value_of(vm, f2, oper2);
+			break;
+
+		case JLT:
+			ARG2("jlt");
+			if (vm->acc < value_of(vm, f1, oper1))
+				vm->pc = value_of(vm, f2, oper2);
+			break;
+
+		case JLTE:
+			ARG2("jlte");
+			if (vm->acc <= value_of(vm, f1, oper1))
+				vm->pc = value_of(vm, f2, oper2);
+			break;
+
 		case STR:
 			ARG2("str");
 			if (!is_register(f2))
