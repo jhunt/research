@@ -82,6 +82,36 @@
     help: jump if accumulator is not 0
     args:
       - [label]
+- je:
+    help: jump if accumulator is equal to first operand
+    args:
+      - [register, number]
+      - [label]
+- jne:
+    help: jump if accumulator is not equal to first operand
+    args:
+      - [register, number]
+      - [label]
+- jgt:
+    help: jump if accumulator is greater than first operand
+    args:
+      - [register, number]
+      - [label]
+- jgte:
+    help: jump if accumulator is greater than or equal to first operand
+    args:
+      - [register, number]
+      - [label]
+- jlt:
+    help: jump if accumulator is less than first operand
+    args:
+      - [register, number]
+      - [label]
+- jlte:
+    help: jump if accumulator is less than or equal to first operand
+    args:
+      - [register, number]
+      - [label]
 
 - str:
     help: format a (heap-allocated) string
