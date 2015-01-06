@@ -7,5 +7,5 @@ fn main
   set %b "World"
   set %c 0
 
-  str  "%[c]i: %[a]s, %[b]s!\n" %d
-  echo "%[d]s"
+  string "%[c]i: %[a]s, %[b]s!\n" %d
+  print "%[d]s"

@@ -1,10 +1,10 @@
 fn main
 
   set %a 0755
-  echo "0755 = %[a]04o\n"
+  print "0755 = %[a]04o\n"
 
   set %a 0x4242
-  echo "4242 = %[a]04x\n"
+  print "4242 = %[a]04x\n"
 
   set %a 0xdecafbad
-  echo "coffee = %[a]x\n"
+  print "coffee = %[a]x\n"

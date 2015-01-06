@@ -9,7 +9,7 @@ fn fib
     cmp %a 0
     jz end
 
-    echo "> a=%i, b=%i, c=%i\n"
+    print "> a=%i, b=%i, c=%i\n"
     add %b %c
     swap %b %c
     sub %a 1
