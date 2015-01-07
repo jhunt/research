@@ -179,7 +179,7 @@ getline:
 			memmove(p->buffer, b, strlen(b)+1);
 			return 1;
 		}
-		a = b;
+		b = a;
 	}
 
 	if (isdigit(*b)) {
@@ -199,7 +199,7 @@ getline:
 			memmove(p->buffer, b, strlen(b)+1);
 			return 1;
 		}
-		a = b;
+		b = a;
 	}
 
 	if (isalpha(*b)) {
