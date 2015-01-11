@@ -16,7 +16,6 @@ int main (int argc, char **argv)
 	}
 
 	if (pid > 0) return 0;
-
 	if (!freopen("/dev/null", "r", stdin))  perror("</dev/null");
 	if (!freopen("/dev/null", "w", stdout)) perror(">/dev/null");
 	if (!freopen("/dev/null", "w", stderr)) perror("2>/dev/null");
