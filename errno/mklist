@@ -1,0 +1,27 @@
+#!/usr/bin/perl
+# elist can be generated with:
+#   `man errno | grep '^ *  E' | awk '{print $1}' > elist`
+
+print <<EOF;
+#ifndef ELIST_H
+#define ELIST_H
+static char *CONST[255] = {0};
+#define constant(x) do { if ((x) >= 0 && (x) <= 255) CONST[(x)] = #x; } while (0)
+
+static void elist_init(void)
+{
+EOF
+
+for (<>) {
+	chomp;
+	print <<EOF;
+#ifdef $_
+	constant($_);
+#endif
+
+EOF
+}
+print <<EOF;
+}
+#endif
+EOF
