@@ -1,0 +1,21 @@
+#!/bin/sh
+VERSION=$1
+if [[ -z $VERSION ]]; then
+	echo "USAGE: $0 0.9.xy"
+	exit 1
+fi
+
+mkdir -p $HOME/ssl/build
+cd $HOME/ssl/build
+
+set -ex
+[ -f openssl-$VERSION.tar.gz ] || wget ftp://ftp.openssl.org/source/old/0.9.x/openssl-$VERSION.tar.gz
+tar -xzvf openssl-$VERSION.tar.gz
+cd openssl-$VERSION
+
+egrep -ril '^=item [0-9]+$' doc/ | xargs sed -i -e 's/=item \(.*\)/=item C<\1>/'
+./config --prefix=$HOME/ssl/$VERSION --shared
+make
+make test
+make install
+find . -name '*.so'
