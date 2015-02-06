@@ -19,6 +19,9 @@ int main(int argc, char **argv)
 			m[i] = calloc(64 * 1024, sizeof(char));
 			memset(m, rand(), 64 * 1024);
 		}
+
+		// FIXME: can we just use a single sbrk() call to extend the heap?
+
 	} else {
 		fprintf(stderr, "unknown tool '%s'\n", bin);
 		return 1;
