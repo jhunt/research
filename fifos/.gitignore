@@ -1,2 +1,5 @@
 *.o
 size
+io
+io2
+fuzz

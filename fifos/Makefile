@@ -1,7 +1,7 @@
 CFLAGS := -Wall -g2
 
 BINARIES :=
-BINARIES += size
+BINARIES += size io io2 fuzz
 
 all: $(BINARIES)
 clean:
