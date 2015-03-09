@@ -14,6 +14,14 @@ troubleshooting aid.
 
 [http://jameshunt.us/writings/dist-rrd.html](http://jameshunt.us/writings/dist-rrd.html)
 
+malloc/
+-------
+
+A custom malloc implementation, with an eye towrads stress-testing
+software for edge-case failures around memory allocation.
+
+(article forthcoming...)
+
 Further Reading
 ---------------
 
