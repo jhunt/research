@@ -25,7 +25,15 @@ static inline void __init(void)
 
 static inline int __check(void)
 {
-	return FMALLOC.left == 0 ? 0 : (FMALLOC.left--, 1);
+	if (FMALLOC.left == 0) {
+		char *sigil = getenv("MALLOC_FS_SIGIL");
+		if (sigil)
+			unlink(sigil);
+		return 0;
+	}
+
+	FMALLOC.left--;
+	return 1;
 }
 
 static inline void* __malloc(size_t n)
