@@ -18,8 +18,8 @@
 
  */
 
-pthread_mutex_t    LOCK;
-unsigned long long COUNTER;
+pthread_mutex_t     LOCK;
+unsigned long long *COUNTER;
 
 struct params {
 	int id;                /* used for debugging / diagnostics         */
@@ -41,7 +41,7 @@ void* worker(void *_params)
 				exit(3);
 			}
 
-			fprintf(stderr, "[t%d] read COUNTER at %llu\n", params->id, COUNTER);
+			fprintf(stderr, "[t%d] read COUNTER at %llu\n", params->id, *COUNTER);
 
 			if (pthread_mutex_unlock(&LOCK)) {
 				perror("pthread_mutex_unlock");
@@ -54,8 +54,8 @@ void* worker(void *_params)
 			exit(3);
 		}
 
-		COUNTER++;
-		fprintf(stderr, "[t%d] incremented COUNTER to %llu\n", params->id, COUNTER);
+		*COUNTER += 1;
+		fprintf(stderr, "[t%d] incremented COUNTER to %llu\n", params->id, *COUNTER);
 
 		if (pthread_mutex_unlock(&LOCK)) {
 			perror("pthread_mutex_unlock");
@@ -109,6 +109,8 @@ int main(int argc, char **argv)
 		exit(3);
 	}
 
+	COUNTER = calloc(1, sizeof(unsigned long long));
+
 	gettimeofday(&start, NULL);
 	for (i = 0; i < nthreads; i++) {
 		params[i].id              = i+1;
@@ -137,7 +139,7 @@ int main(int argc, char **argv)
 
 	fprintf(stdout, "%li %llu %llu %i %i\n",
 		((end.tv_sec - start.tv_sec) * 1000000) + (end.tv_usec - start.tv_usec),
-		COUNTER, COUNTER - (nthreads * write_cycles),
+		*COUNTER, *COUNTER - (nthreads * write_cycles),
 		write_cycles, reads_per_write);
 
 	return 0;
