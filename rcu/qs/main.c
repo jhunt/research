@@ -3,6 +3,7 @@
 #include <pthread.h>
 #include <sys/time.h>
 #include <poll.h>
+#include "../api.h"
 
 /*
 
@@ -47,19 +48,6 @@
 #define DEFINE_PER_THREAD(type,name) static type __per_thread_ ## name[NUM_THREADS]
 #define for_each_thread(t) for (t = 0; t < NUM_THREADS; t++)
 
-#define mutex_lock(lock) ({ \
-	if (pthread_mutex_lock(&(lock)) != 0) { \
-		perror("pthread_mutex_lock"); \
-		exit(3); \
-	} \
-})
-#define mutex_unlock(lock) ({ \
-	if (pthread_mutex_unlock(&(lock)) != 0) { \
-		perror("pthread_mutex_unlock"); \
-		exit(3); \
-	} \
-})
-
 pthread_mutex_t tid_lock;
 DEFINE_PER_THREAD(pthread_t, tid) = {0};
 
@@ -87,11 +75,11 @@ void register_thread()
 {
 	int t;
 
-	mutex_lock(tid_lock);
+	lock(&tid_lock);
 	for_each_thread(t) {
 		if (__per_thread_tid[t] == NO_THREAD) {
 			__per_thread_tid[t] = pthread_self();
-			mutex_unlock(tid_lock);
+			unlock(&tid_lock);
 			return;
 		}
 	}
@@ -156,7 +144,7 @@ void synchronize_rcu(void)
 	int t;
 
 	barrier();
-	mutex_lock(rcu_gp_lock);
+	lock(&rcu_gp_lock);
 	rcu_gp_ctr += 2;
 	for_each_thread(t) {
 		while (rcu_gp_ongoing(t) &&
@@ -165,7 +153,7 @@ void synchronize_rcu(void)
 			barrier();
 		}
 	}
-	mutex_unlock(rcu_gp_lock);
+	unlock(&rcu_gp_lock);
 	barrier();
 }
 
@@ -174,128 +162,101 @@ void synchronize_rcu(void)
 pthread_mutex_t     LOCK;
 unsigned long long *COUNTER;
 
-struct params {
-	int id;                /* used for debugging / diagnostics         */
-	int write_cycles;      /* how many times to loop                   */
-	int reads_per_write;   /* how many reads to perform each iteration */
-
-	pthread_t tid;         /* stored for pthread_join use later        */
-};
-
-void* worker(void *_params)
+static inline
+void writer(int cycles)
 {
-	struct params *params = (struct params*)_params;
-	int i, j;
 	unsigned long long *OLD, *NEW;
 
-	register_thread();
-	for (i = 0; i < params->write_cycles; i++) {
-		for (j = 0; j < params->reads_per_write; j++) {
-			rcu_read_lock();
-			fprintf(stderr, "[t%d] read COUNTER at %llu\n", params->id, *(ONCE(COUNTER)));
-			rcu_read_unlock();
-		}
+	while (cycles--) {
 
-		NEW = malloc(sizeof(*NEW));
-		if (!NEW) {
-			perror("malloc");
-			exit(3);
-		}
-		mutex_lock(LOCK);
+		NEW = xmalloc(sizeof(*NEW));
+
+		lock(&LOCK);
 		OLD = COUNTER;
 		*NEW = *OLD + 1;
 		COUNTER = NEW;
-		mutex_unlock(LOCK);
-		fprintf(stderr, "[t%d] incremented COUNTER to %llu\n", params->id, *NEW);
+		unlock(&LOCK);
+
+		fprintf(stderr, "[writer] incremented COUNTER to %llu\n", *NEW);
 
 		synchronize_rcu();
 		free(OLD);
 	}
+}
 
-	return _params;
+static inline
+void sleep_ms(int ms)
+{
+	struct timespec tv;
+	tv.tv_sec  = 0;
+	tv.tv_nsec = ms * 1000000;
+	nanosleep(&tv, NULL);
+}
+
+void* reader(void *_)
+{
+	int id = *(int *)_;
+
+	register_thread();
+
+	for (;;) {
+		rcu_read_lock();
+		fprintf(stderr, "[t%d] read COUNTER at %llu\n", id, *(ONCE(COUNTER)));
+	//	sleep_ms(10);
+		rcu_read_unlock();
+		rcu_quiescent_state();
+	}
+
+	return _;
 }
 
 static void rcu_init()
 {
 	int rc;
 
-	rc = pthread_mutex_init(&rcu_gp_lock, NULL);
-	if (rc != 0) {
-		perror("pthread_mutex_init");
-		exit(3);
-	}
-
-	rc = pthread_mutex_init(&tid_lock, NULL);
-	if (rc != 0) {
-		perror("pthread_mutex_init");
-		exit(3);
-	}
+	make_lock(&rcu_gp_lock);
+	make_lock(&tid_lock);
 }
 
 int main(int argc, char **argv)
 {
 	struct timeval start, end;
 	pthread_t tid;
-	int rc, i, nthreads, write_cycles, reads_per_write;
+	int rc, i, nthreads, cycles, *ids;
 	void *status;
-	struct params *params;
 
-	if (argc != 4) {
-		fprintf(stderr, "USAGE: %s THREADS CYCLES READS\n", argv[0]);
+	if (argc != 3) {
+		fprintf(stderr, "USAGE: %s THREADS CYCLES\n", argv[0]);
 		exit(2);
 	}
 
-	nthreads        = atoi(argv[1]);
-	write_cycles    = atoi(argv[2]);
-	reads_per_write = atoi(argv[3]);
+	nthreads = atoi(argv[1]);
+	cycles   = atoi(argv[2]);
 	if (nthreads < 1) {
 		fprintf(stderr, "Invalid THREADS value %s (must be > 0)\n", argv[1]);
-		fprintf(stderr, "USAGE: %s THREADS CYCLES READS\n", argv[0]);
+		fprintf(stderr, "USAGE: %s THREADS CYCLES\n", argv[0]);
 		exit(2);
 	}
-	if (write_cycles < 1) {
+	if (cycles < 1) {
 		fprintf(stderr, "Invalid WRITE_CYCLES value %s (must be > 0)\n", argv[2]);
-		fprintf(stderr, "USAGE: %s THREADS CYCLES READS\n", argv[0]);
+		fprintf(stderr, "USAGE: %s THREADS CYCLES\n", argv[0]);
 		exit(2);
-	}
-	if (reads_per_write < 1) {
-		fprintf(stderr, "Invalid READS value %s (must be > 0)\n", argv[3]);
-		fprintf(stderr, "USAGE: %s THREADS CYCLES READS\n", argv[0]);
-		exit(2);
-	}
-	params = calloc(nthreads, sizeof(struct params));
-	if (!params) {
-		perror("calloc");
-		exit(3);
 	}
 
 	rcu_init();
-	rc = pthread_mutex_init(&LOCK, NULL);
-	if (rc != 0) {
-		perror("pthread_mutex_init");
-		exit(3);
-	}
-	COUNTER = calloc(1, sizeof(unsigned long long));
 
+	make_lock(&LOCK);
+	ids = xcalloc(nthreads, sizeof(int));
+	COUNTER = xcalloc(1, sizeof(unsigned long long));
+
+	for (i = 0; i < nthreads; i++) {
+		ids[i] = i+1;
+		spin_up(reader, &ids[i]);
+	}
+
+	//sleep_ms(9);
 	gettimeofday(&start, NULL);
-	for (i = 0; i < nthreads; i++) {
-		params[i].id              = i+1;
-		params[i].write_cycles    = write_cycles;
-		params[i].reads_per_write = reads_per_write;
-
-		rc = pthread_create(&params[i].tid, NULL, worker, &params[i]);
-		if (rc != 0) {
-			perror("pthread_create");
-			exit(3);
-		}
-	}
-	for (i = 0; i < nthreads; i++) {
-		rc = pthread_join(params[i].tid, &status);
-		if (rc != 0) {
-			perror("pthread_join");
-			exit(3);
-		}
-	}
+	writer(cycles);
 	gettimeofday(&end, NULL);
 
 	if (end.tv_usec < start.tv_usec) {
@@ -305,12 +266,6 @@ int main(int argc, char **argv)
 
 	fprintf(stdout, "%i %li\n", nthreads,
 	        ((end.tv_sec - start.tv_sec) * 1000000) + (end.tv_usec - start.tv_usec));
-#if 0
-	fprintf(stdout, "%li %llu %llu %i %i\n",
-		((end.tv_sec - start.tv_sec) * 1000000) + (end.tv_usec - start.tv_usec),
-		*COUNTER, *COUNTER - (nthreads * write_cycles),
-		write_cycles, reads_per_write);
-#endif
 
 	return 0;
 }

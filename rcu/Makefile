@@ -4,10 +4,10 @@ clean:
 	rm -f */*.o
 
 run-lock: lock/main.o
-	$(CC) -o $@ $+
+	$(CC) -o $@ -I. $+
 
 run-qs: qs/main.o
-	$(CC) -o $@ $+
+	$(CC) -o $@ -I. $+
 
 data: trial.png
 trial.png: out.data
