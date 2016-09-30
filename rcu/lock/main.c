@@ -137,10 +137,14 @@ int main(int argc, char **argv)
 		end.tv_usec += 1000000;
 	}
 
+	fprintf(stdout, "%i %li\n", nthreads,
+	        ((end.tv_sec - start.tv_sec) * 1000000) + (end.tv_usec - start.tv_usec));
+#if 0
 	fprintf(stdout, "%li %llu %llu %i %i\n",
 		((end.tv_sec - start.tv_sec) * 1000000) + (end.tv_usec - start.tv_usec),
 		*COUNTER, *COUNTER - (nthreads * write_cycles),
 		write_cycles, reads_per_write);
+#endif
 
 	return 0;
 }

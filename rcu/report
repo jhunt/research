@@ -1,0 +1,8 @@
+#!/bin/bash
+set -ex
+
+rm -fr tmp/ && mkdir -p tmp/
+for x in 1 2 4 8 12 16 20 24 32 40 48 64 96 128; do ./run-lock $x 10 100 2>/dev/null >> tmp/lock.data; done
+for x in 1 2 4 8 12 16 20 24 32 40 48 64 96 128; do ./run-qs   $x 10 100 2>/dev/null >> tmp/qs.data;   done
+join tmp/lock.data tmp/qs.data
+rm -fr tmp/

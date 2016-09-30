@@ -171,6 +171,7 @@ void synchronize_rcu(void)
 
 /***********************************************************/
 
+pthread_mutex_t     LOCK;
 unsigned long long *COUNTER;
 
 struct params {
@@ -200,11 +201,12 @@ void* worker(void *_params)
 			perror("malloc");
 			exit(3);
 		}
+		mutex_lock(LOCK);
 		OLD = COUNTER;
-		*NEW = *OLD;
-		*NEW = *NEW + 1;
+		*NEW = *OLD + 1;
 		COUNTER = NEW;
-		fprintf(stderr, "[t%d] incremented COUNTER to %llu\n", params->id, *COUNTER);
+		mutex_unlock(LOCK);
+		fprintf(stderr, "[t%d] incremented COUNTER to %llu\n", params->id, *NEW);
 
 		synchronize_rcu();
 		free(OLD);
@@ -268,6 +270,11 @@ int main(int argc, char **argv)
 	}
 
 	rcu_init();
+	rc = pthread_mutex_init(&LOCK, NULL);
+	if (rc != 0) {
+		perror("pthread_mutex_init");
+		exit(3);
+	}
 	COUNTER = calloc(1, sizeof(unsigned long long));
 
 	gettimeofday(&start, NULL);
@@ -296,10 +303,14 @@ int main(int argc, char **argv)
 		end.tv_usec += 1000000;
 	}
 
+	fprintf(stdout, "%i %li\n", nthreads,
+	        ((end.tv_sec - start.tv_sec) * 1000000) + (end.tv_usec - start.tv_usec));
+#if 0
 	fprintf(stdout, "%li %llu %llu %i %i\n",
 		((end.tv_sec - start.tv_sec) * 1000000) + (end.tv_usec - start.tv_usec),
 		*COUNTER, *COUNTER - (nthreads * write_cycles),
 		write_cycles, reads_per_write);
+#endif
 
 	return 0;
 }

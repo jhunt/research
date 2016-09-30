@@ -1,0 +1,7 @@
+#!/usr/bin/env gnuplot
+
+set terminal png
+datafile = 'out.data'
+
+plot datafile using 1:2 with lines, \
+     datafile using 1:3 with lines
