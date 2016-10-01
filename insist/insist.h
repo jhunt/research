@@ -1,5 +1,5 @@
-#ifndef SHOULD_DOT_H
-#define SHOULD_DOT_H
+#ifndef INSIST_DOT_H
+#define INSIST_DOT_H
 
 /*
    Copyright (c) 2016, James Hunt
@@ -26,26 +26,26 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-/* ASSERTION_OUTPUT_STREAM defines the FILE* that the `should()` macro will
+/* ASSERTION_OUTPUT_STREAM defines the FILE* that the `insist()` macro will
    print error messages to, before exiting.  If ASSERTION_PRINT_ALWAYS is also
    defined, this stream will be used to print successes as well. */
 #ifndef ASSERTION_OUTPUT_STREAM
 #define ASSERTION_OUTPUT_STREAM stderr
 #endif
 
-/* ASSERTION_FAIL_EXIT_CODE defines the exit code value that the `should()`
+/* ASSERTION_FAIL_EXIT_CODE defines the exit code value that the `insist()`
    macro will exit with, in the event of an assertion failure. */
 #ifndef ASSERTION_FAIL_EXIT_CODE
 #define ASSERTION_FAIL_EXIT_CODE 7
 #endif
 
-/* Two (2) #define's control the behavior of the `should()` macro:
+/* Two (2) #define's control the behavior of the `insist()` macro:
 
    ASSERTION_DEBUGGING causes the function (__func__), file (__FILE__) and
    line number (__LINE__) of the assertion call to be printed with the
    failure message, which can be useful for tracking down flaky assertions.
 
-   ASSERTION_PRINT_ALWAYS causes `should()` to *always* print a diagnostic
+   ASSERTION_PRINT_ALWAYS causes `insist()` to *always* print a diagnostic
    (to ASSERTION_OUTPUT_STREAM), regardless of success / failure.  The
    program will not abort on success, of course, but the messages may prove
    useful for output verification during testing.
@@ -55,21 +55,21 @@
    the "debugging" behavior.
  */
 #if   !defined(ASSERTION_DEBUGGING)
-#  define should(test,msg) ({ \
+#  define insist(test,msg) ({ \
 	if (!(test)) { \
 		fprintf((ASSERTION_OUTPUT_STREAM), "ASSERTION FAILED: " msg " (`" #test "` was false)\n"); \
 		exit((ASSERTION_FAIL_EXIT_CODE)); \
 	} \
 })
 #elif !defined(ASSERTION_PRINT_ALWAYS)
-#  define should(test,msg) ({ \
+#  define insist(test,msg) ({ \
 	if (!(test)) { \
 		fprintf((ASSERTION_OUTPUT_STREAM), "ASSERTION FAILED: " msg " (`" #test "` was false, in %s(), at %s:%i)\n", __func__, __FILE__, __LINE__); \
 		exit((ASSERTION_FAIL_EXIT_CODE)); \
 	} \
 })
 #else
-#  define should(test,msg) ({ \
+#  define insist(test,msg) ({ \
 	if (!(test)) { \
 		fprintf((ASSERTION_OUTPUT_STREAM), "ASSERTION FAILED: " msg " (`" #test "` was false, in %s(), at %s:%i)\n", __func__, __FILE__, __LINE__); \
 		exit((ASSERTION_FAIL_EXIT_CODE)); \
