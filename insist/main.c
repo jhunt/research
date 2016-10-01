@@ -6,7 +6,7 @@
 #include <stdio.h>
 
 int main(int argc, char **argv) {
-	int x = 42;
+	int x = 421;
 	insist(x == 42, "x should be the answer to life, the universe, and everything");
 	return 0;
 }

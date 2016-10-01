@@ -1,9 +1,9 @@
-#include <assert.h>
+#include "insist.h"
 #include <stdio.h>
 
 int _strlen(const char *s)
 {
-	assert(s != NULL);
+	insist(s != NULL, "_strlen(NULL) is undefined");
 
 	int n = 0;
 	while (*s++)
