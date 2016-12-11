@@ -1,0 +1,11 @@
+scs1 os-conf spring-cloud-broker
+ops-metrics1 os-conf cf-metrics
+gemfire1 os-conf GemFire GemFire-Broker GemFire-Broker-Registrar
+gemfire2 os-conf GemFire GemFire-Broker GemFire-Broker-Registrar
+gemfire3 os-conf GemFire GemFire-Broker GemFire-Broker-Registrar
+bind1 os-conf bind9
+cf1 os-conf cf cf-mysql cflinuxfs2-rootfs diego notifications-ui garden-runc mysql-backup mysql-monitoring service-backup etcd notifications cf-autoscaling push-apps-manager-release consul
+cf2 os-conf cf cf-mysql cflinuxfs2-rootfs diego notifications-ui garden-runc mysql-backup mysql-monitoring service-backup etcd notifications cf-autoscaling push-apps-manager-release
+concourse1 os-conf concourse garden-runc os-conf
+concourse2 os-conf concourse garden-runc os-conf
+concourse3 os-conf concourse garden-runc os-conf
