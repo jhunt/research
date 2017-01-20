@@ -5,8 +5,8 @@
 #define F(x)  (long double)exp(-1 * (x) * (x) / 2)
 #define F_(y) (long double)sqrt(-2.0 * log(y))
 
-#define R_FACTOR 1.0e-3
 #define V_FACTOR 1.0e-5
+#define V_EPSILON 1.0e-10
 
 /* integrates e^(-x^2/2) from [3.6..inf) */
 long double find_v(long double r, long double ep) {
@@ -23,25 +23,27 @@ long double find_v(long double r, long double ep) {
 	return acc;
 }
 
-long double find_x0(long double r, int n)
+long double find_x0(long double r, int n, long double *v)
 {
-	long double x, v;
+	long double x;
 	int i;
 
 	x = r;
-	v = find_v(r, 0.001);
-	for (i = n - 2; i >= 0; i--) {
-		if (i == 1 || i == n - 1)
+	*v = find_v(r, V_EPSILON);
+	for (i = n - 2; i > 0; i--) {
+		if (i == 1 || i == n - 2)
 		fprintf(stderr, "x%-3d = F_(%20.18Le / %20.18Le + F(%20.18Le)) = %20.18Le\n",
-			i, v, x, x, F_(v/x + F(x)));
-		x = F_(v/x + F(x));
+			i, *v, x, x, F_(*v/x + F(x)));
+		x = F_(*v/x + F(x));
 	}
-	return (v - x + x * F(x));
+	return (*v - x + x * F(x));
 }
+
+#define signif(r,d) ((r)+(d) != (r))
 
 int main(int argc, char **argv) {
 	int i, nboxes;
-	long double r, x, last, d;
+	long double r, x, d, v;
 	char *end = NULL;
 
 	if (argc != 3) {
@@ -73,7 +75,8 @@ int main(int argc, char **argv) {
 
 	/* bisect!
 	   first, increment r by d until we don't get a NaN;
-	     then, decrement r by d until we hit a NaN;
+	     then, make d smaller by one order of magnitude
+	       and decrement r by d until we hit a NaN;
 	     then, make d smaller by one order of magnitude and try again
 	   algorithm terminates when z(r) == 0.0 (not likely)
 	     or when r + d == r (i.e., d is too small to meaningfully affect
@@ -82,19 +85,19 @@ int main(int argc, char **argv) {
 	 */
 	d = 1.0e-2;
 	for (i = 0; i < 10; i++) {
-		if (r + d == r) {
-			fprintf(stderr, "z(r) is close to 0 for r = %20.18Le\n", r);
+		if (!signif(r,d)) {
+			fprintf(stderr, "z(r) is close to 0 for r = %20.18Le, v = %20.18Le\n", r, v);
 			return 1;
 		}
-		for (x = find_x0(r, nboxes); isnan(x); r += d, x = find_x0(r, nboxes));
+		for (x = find_x0(r, nboxes, &v); isnan(x) && signif(r,d); r += d, x = find_x0(r, nboxes, &v));
 		if (x == 0) {
-			fprintf(stderr, "z(r) = 0 for r = %20.18Le\n", r);
+			fprintf(stderr, "z(r) = 0 for r = %20.18Le, v = %20.18Le\n", r, v);
 			return 0;
 		}
 		d *= -0.1;
-		for (x = find_x0(r, nboxes); !isnan(x) && x != 0.0; r += d, x = find_x0(r, nboxes));
+		for (x = find_x0(r, nboxes, &v); !isnan(x) && signif(r,d) && x != 0.0; r += d, x = find_x0(r, nboxes, &v));
 		if (x == 0) {
-			fprintf(stderr, "z(r) = 0 for r = %20.18Le\n", r);
+			fprintf(stderr, "z(r) = 0 for r = %20.18Le, v = %20.18Le\n", r, v);
 			return 0;
 		}
 		d *= -0.1;
