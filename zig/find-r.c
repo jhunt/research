@@ -6,10 +6,10 @@
 #define F_(y) (long double)sqrt(-2.0 * log(y))
 
 #define V_FACTOR 1.0e-5
-#define V_EPSILON 1.0e-10
+#define V_EPSILON 1.0e-18
 
 /* integrates e^(-x^2/2) from [3.6..inf) */
-long double find_v(long double r, long double ep) {
+long double V(long double r, long double ep) {
 	long double x, y, acc;
 
 	acc = r * F(r);
@@ -23,86 +23,59 @@ long double find_v(long double r, long double ep) {
 	return acc;
 }
 
-long double find_x0(long double r, int n, long double *v)
+long double Z(long double x, int n, long double ep, long double *v)
 {
-	long double x;
+	long double t;
 	int i;
-
-	x = r;
-	*v = find_v(r, V_EPSILON);
+	*v = V(x, ep);
 	for (i = n - 2; i > 0; i--) {
-		if (i == 1 || i == n - 2)
-		fprintf(stderr, "x%-3d = F_(%20.18Le / %20.18Le + F(%20.18Le)) = %20.18Le\n",
-			i, *v, x, x, F_(*v/x + F(x)));
-		x = F_(*v/x + F(x));
+		t = F_(*v/x + F(x));
+		if (isnan(t)) break;
+		x = t;
 	}
-	return (*v - x + x * F(x));
+	return (*v-x + x*F(x));
 }
 
-#define signif(r,d) ((r)+(d) != (r))
+long double solve(long double a, long double b, long double ep, int n, long double *v)
+{
+	long double r, z, _;
+	for (;;) {
+		r = (a + b) / 2.0;
+		z = Z(r, n, ep, v);
+		if (b - r < ep || fabsl(z) < ep)
+			return r;
+
+		/* if we crossed the root (change in sign) back up the bisection to [a,r].
+		   otherwise, the root lies "ahead" of us, at [r,b] */
+		if (Z(a,n,ep,&_) * z < 0) b = r;
+		else                      a = r;
+	}
+}
 
 int main(int argc, char **argv) {
-	int i, nboxes;
-	long double r, x, d, v;
+	int n;
+	long double r, v;
 	char *end = NULL;
 
-	if (argc != 3) {
-		fprintf(stderr, "USAGE: %s NBOXES R\n", argv[0]);
+	if (argc > 2) {
+		fprintf(stderr, "USAGE: %s [N]\n(where N defaults to 256)\n", argv[0]);
 		return 1;
 	}
 
-	/* arg 1 - number of boxes */
-	nboxes = strtol(argv[1], &end, 10);
-	if (end != NULL && *end != '\0') {
-		fprintf(stderr, "'%s' doesn't look like an integer... (starting at '%s')\n", argv[1], end);
-		return 1;
-	}
-	if (nboxes <= 0) {
-		fprintf(stderr, "%d is not a valid number of boxes (must be positive, non-zero)\n", nboxes);
-		return 1;
-	}
-
-	/* arg 2 - guess for r */
-	r = strtod(argv[2], &end);
-	if (end != NULL && *end != '\0') {
-		fprintf(stderr, "'%s' doesn't look like a floating-point number... (starting at '%s')\n", argv[2], end);
-		return 1;
-	}
-	if (r <= 0) {
-		fprintf(stderr, "%20.18Le is not a valid r (must be positive, non-zero)\n", r);
-		return 1;
-	}
-
-	/* bisect!
-	   first, increment r by d until we don't get a NaN;
-	     then, make d smaller by one order of magnitude
-	       and decrement r by d until we hit a NaN;
-	     then, make d smaller by one order of magnitude and try again
-	   algorithm terminates when z(r) == 0.0 (not likely)
-	     or when r + d == r (i.e., d is too small to meaningfully affect
-	                         the value of r, and continued calculation
-	                         will just lead to an infinite loop)
-	 */
-	d = 1.0e-2;
-	for (i = 0; i < 10; i++) {
-		if (!signif(r,d)) {
-			fprintf(stderr, "z(r) is close to 0 for r = %20.18Le, v = %20.18Le\n", r, v);
+	n = 256;
+	if (argc == 2) {
+		n = strtol(argv[1], &end, 10);
+		if (end != NULL && *end != '\0') {
+			fprintf(stderr, "'%s' doesn't look like an integer... (starting at '%s')\n", argv[1], end);
 			return 1;
 		}
-		for (x = find_x0(r, nboxes, &v); isnan(x) && signif(r,d); r += d, x = find_x0(r, nboxes, &v));
-		if (x == 0) {
-			fprintf(stderr, "z(r) = 0 for r = %20.18Le, v = %20.18Le\n", r, v);
-			return 0;
+		if (n <= 0) {
+			fprintf(stderr, "%d is not a valid number of boxes (must be positive, non-zero)\n", n);
+			return 1;
 		}
-		d *= -0.1;
-		for (x = find_x0(r, nboxes, &v); !isnan(x) && signif(r,d) && x != 0.0; r += d, x = find_x0(r, nboxes, &v));
-		if (x == 0) {
-			fprintf(stderr, "z(r) = 0 for r = %20.18Le, v = %20.18Le\n", r, v);
-			return 0;
-		}
-		d *= -0.1;
 	}
 
-	fprintf(stderr, "did not find a valid value of r for z(r) = 0, before we gave up.\n");
-	return 1;
+	r = solve(0.5, 10, 1e-15, n, &v);
+	printf("z(r) ≅ 0 for n = %i, r = %20.18Le, v = %20.18Le\n", n, r, v);
+	return 0;
 }
