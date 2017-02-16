@@ -59,7 +59,6 @@ sub num
 	return sprintf("%8.1lf k", $n) if $n < 1024;
 	$n /= 1024;
 	return sprintf("%8.1lf M", $n) if $n < 1024;
-	$n /= 1024;
 	return sprintf("%8.1lf G", $n / 1024);
 }
 
