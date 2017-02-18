@@ -60,7 +60,7 @@ sub num
 	$n /= 1024;
 	return sprintf("%8.1lf M", $n) if $n < 1024;
 	$n /= 1024;
-	return sprintf("%8.1lf G", $n / 1024);
+	return sprintf("%8.1lf G", $n);
 }
 
 my $pid = $ARGV[0] or die "USAGE: $0 PID\n";
