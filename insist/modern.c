@@ -1,3 +1,4 @@
+#define ASSERTION_DEBUGGING
 #include "insist.h"
 #include <stdio.h>
 
@@ -12,8 +13,14 @@ int _strlen(const char *s)
 	return n;
 }
 
+void thunk() {
+	_strlen(NULL); /* should fail */
+}
+
 int main(int argc, char **argv)
 {
-	_strlen(NULL); /* should fail */
+	thunk();
+	thunk();
+	thunk();
 	return 0;
 }

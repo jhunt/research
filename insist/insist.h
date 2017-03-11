@@ -25,6 +25,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <execinfo.h>
 
 /* ASSERTION_OUTPUT_STREAM defines the FILE* that the `insist()` macro will
    print error messages to, before exiting.  If ASSERTION_PRINT_ALWAYS is also
@@ -64,14 +65,23 @@
 #elif !defined(ASSERTION_PRINT_ALWAYS)
 #  define insist(test,msg) ({ \
 	if (!(test)) { \
+		void *buffer[128]; int size; \
 		fprintf((ASSERTION_OUTPUT_STREAM), "ASSERTION FAILED: " msg " (`" #test "` was false, in %s(), at %s:%i)\n", __func__, __FILE__, __LINE__); \
+		size = backtrace(buffer, size); \
+		fprintf((ASSERTION_OUTPUT_STREAM), "%i frames\n", size); \
+		backtrace_symbols_fd(buffer, size, fileno(ASSERTION_OUTPUT_STREAM)); \
+		fprintf((ASSERTION_OUTPUT_STREAM), "done\n"); \
 		exit((ASSERTION_FAIL_EXIT_CODE)); \
 	} \
 })
 #else
 #  define insist(test,msg) ({ \
 	if (!(test)) { \
+		void *buffer[128]; int size; \
 		fprintf((ASSERTION_OUTPUT_STREAM), "ASSERTION FAILED: " msg " (`" #test "` was false, in %s(), at %s:%i)\n", __func__, __FILE__, __LINE__); \
+		size = backtrace(buffer, size); \
+		backtrace_symbols_fd(buffer, size, fileno(ASSERTION_OUTPUT_STREAM)); \
+		fprintf((ASSERTION_OUTPUT_STREAM), "done\n"); \
 		exit((ASSERTION_FAIL_EXIT_CODE)); \
 	} else { \
 		fprintf((ASSERTION_OUTPUT_STREAM), "assertion succeeded: " msg " (`" #test "` was true, in %s(), at %s:%i)\n", __func__, __FILE__, __LINE__); \
