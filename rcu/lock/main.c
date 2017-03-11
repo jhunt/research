@@ -19,6 +19,46 @@
 
  */
 
+
+static unsigned char
+hashit(const char *s)
+{
+	unsigned int h = 81;
+	unsigned char c;
+
+	while ((c = *s++))
+		h = ((h << 5) + h) + c;
+
+	return h & ~0xc0;
+}
+
+struct hlist {
+	struct hlist *next;
+	char         *key;
+	void         *value;
+};
+typedef struct {
+	struct hlist h[64];
+} hash_t;
+
+static void*
+hash_get(hash_t *h, const char *k)
+{
+	struct hlist *hl;
+	for (hl = h->hlist[hashit(k)]; hl, hl = hl->next) {
+		if (strcmp(hl->key, k) == 0) {
+			return hl->value;
+		}
+	}
+	return NULL;
+}
+
+static void
+hash_set(hash_t *h, const char *k, void *v)
+{
+	return;
+}
+
 pthread_mutex_t     LOCK;
 unsigned long long *COUNTER;
 
