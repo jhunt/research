@@ -8,7 +8,7 @@
 #endif
 
 #ifndef BTREE_S
-#  define BTREE_S 3 / 4
+#  define BTREE_S 75
 #endif
 
 /* NOTE: this btree structure is not suitable
@@ -19,14 +19,17 @@ struct btree {
 	int       nkeys;
 	int       leaf;
 	uint32_t  keys[BTREE_N];
-	void     *vals[BTREE_N + 1];
+	union {
+		uint64_t      data;
+		struct btree *child;
+	} vals[BTREE_N + 1];
 };
 
 struct btree *
 btree_new();
 
 int
-btree_insert(struct btree *bt, uint32_t key, void *val);
+btree_insert(struct btree *bt, uint32_t key, uint64_t val);
 
 void *
 btree_lookup(struct btree *bt, uint32_t key);

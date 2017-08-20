@@ -49,14 +49,24 @@ _print(struct btree *bt, int indent)
 		indent, "", (void *)bt, bt->nkeys);
 
 	for (i = 0; i < bt->nkeys; i++) {
-		fprintf(stderr, "%*s[%03d] % 10d (%p) -->\n",
-			indent + 2, "", i, bt->keys[i], bt->vals[i]);
+		if (bt->leaf) {
+			fprintf(stderr, "%*s[%03d] % 10d (= %lu)\n",
+				indent + 2, "", i, bt->keys[i], bt->vals[i].data);
+		} else {
+			fprintf(stderr, "%*s[%03d] % 10d (%p) -->\n",
+				indent + 2, "", i, bt->keys[i], (void *)bt->vals[i].child);
+			_print(bt->vals[i].child, indent + 8);
+		}
 
-		if (!bt->leaf) _print(bt->vals[i], indent + 8);
 	}
-	fprintf(stderr, "%*s[%03d]          ~ (%p) -->\n",
-		indent + 2, "", i, bt->vals[bt->nkeys]);
-	if (!bt->leaf) _print(bt->vals[bt->nkeys], indent + 8);
+	if (bt->leaf) {
+		fprintf(stderr, "%*s[%03d]          ~ (= %lu)\n",
+			indent + 2, "", i, bt->vals[bt->nkeys].data);
+	} else {
+		fprintf(stderr, "%*s[%03d]          ~ (%p) -->\n",
+			indent + 2, "", i, (void *)bt->vals[bt->nkeys].child);
+		_print(bt->vals[bt->nkeys].child, indent + 8);
+	}
 }
 
 void
@@ -115,7 +125,7 @@ _clone(struct btree *bt)
 }
 
 static struct btree *
-_insert(struct btree *bt, uint32_t key, void *val, uint32_t *median)
+_insert(struct btree *bt, uint32_t key, uint64_t val, uint32_t *median)
 {
 	int i, mid;
 	struct btree *r;
@@ -123,30 +133,30 @@ _insert(struct btree *bt, uint32_t key, void *val, uint32_t *median)
 	i = _find(bt, key);
 
 	if (i < bt->nkeys && bt->keys[i] == key) {
-		bt->vals[i] = val;
+		bt->vals[i].data = val;
 		return NULL;
 	}
 
 	if (bt->leaf) {
 		_shiftr(bt, i);
 		bt->nkeys++;
-		bt->keys[i] = key;
-		bt->vals[i] = val;
+		bt->keys[i]      = key;
+		bt->vals[i].data = val;
 
 	} else { /* insert in child */
-		r = _insert(bt->vals[i], key, val, median);
+		r = _insert(bt->vals[i].child, key, val, median);
 
 		if (r) {
 			_shiftr(bt, i);
 			bt->nkeys++;
-			bt->keys[i] = *median;
-			bt->vals[i+1] = r;
+			bt->keys[i]         = *median;
+			bt->vals[i+1].child =  r;
 		}
 	}
 
 	/* split the node now, if it is full, to save complexity */
 	if (_isfull(bt)) {
-		mid = bt->nkeys * BTREE_S;
+		mid = bt->nkeys * BTREE_S / 100;
 		*median = bt->keys[mid];
 
 		r = _clone(bt);
@@ -158,13 +168,12 @@ _insert(struct btree *bt, uint32_t key, void *val, uint32_t *median)
 }
 
 int
-btree_insert(struct btree *bt, uint32_t key, void *val)
+btree_insert(struct btree *bt, uint32_t key, uint64_t val)
 {
 	struct btree *l, *r;
 	uint32_t m;
 
 	assert(bt != NULL);
-	assert(val != NULL);
 
 	r = _insert(bt, key, val, &m);
 	if (r) {
@@ -175,9 +184,9 @@ btree_insert(struct btree *bt, uint32_t key, void *val)
 		/* re-initialize root as [ l . m . r ] */
 		bt->nkeys   = 1;
 		bt->leaf    = 0;
-		bt->vals[0] = l;
-		bt->keys[0] = m;
-		bt->vals[1] = r;
+		bt->vals[0].child = l;
+		bt->keys[0]       = m;
+		bt->vals[1].child = r;
 	}
 
 	return 0;
@@ -202,7 +211,7 @@ _analyze(struct btree *bt, struct analysis *a)
 
 	if (!bt->leaf) {
 		for (i = 0; i <= bt->nkeys; i++)
-			_analyze(bt->vals[i], a);
+			_analyze(bt->vals[i].child, a);
 	}
 }
 
@@ -224,11 +233,12 @@ btree_analyze(struct btree *bt)
 	a.depth = 0;
 	while (bt && !bt->leaf) {
 		a.depth++;
-		bt = bt->vals[0];
+		bt = bt->vals[0].child;
 	}
 
-	fprintf(stderr, "N=%d, SFF=%0.2f, YEARS=%d, MIN=%d\n", BTREE_N, 1.0*BTREE_S, YEARS, SPAN);
+	fprintf(stderr, "N=%d, SFF=%0.2f, YEARS=%d, MIN=%d\n", BTREE_N, BTREE_S / 100.0, YEARS, SPAN);
 	fprintf(stderr, "%d keys / %d nodes / %d levels\n", a.set, a.nodes, a.depth);
+	fprintf(stderr, "%lu bytes per node\n", sizeof(struct btree));
 	fprintf(stderr, "%0.3f%% slots filled\n", a.set * 100.0 / (a.nodes * BTREE_N));
 
 	size = a.nodes * sizeof(struct btree);
@@ -263,15 +273,13 @@ main(int argc, char **argv)
 	uint32_t ts;
 	unsigned int i;
 	struct btree *bt;
-	char *p;
 
 	bt = btree_new();
-	p = (char *)0x1;
 
 	for (i = 0; i < YEARS * 365U * 86400U; i += SPAN * 60) {
 		ts = 1234567890 + i;
 		if (ts %    1000000 == 0) fprintf(stderr, "%d\n", ts);
-		btree_insert(bt, ts, p++);
+		btree_insert(bt, ts, ts);
 	}
 	btree_analyze(bt);
 
