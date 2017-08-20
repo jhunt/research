@@ -3,7 +3,13 @@
 
 #include <stdint.h>
 
-#define BTREE_N 340
+#ifndef BTREE_N
+#  define BTREE_N 340
+#endif
+
+#ifndef BTREE_S
+#  define BTREE_S 3 / 4
+#endif
 
 /* NOTE: this btree structure is not suitable
          for writing to disk and then mmap()-ing

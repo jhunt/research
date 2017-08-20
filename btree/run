@@ -1,0 +1,6 @@
+#!/bin/bash
+
+while [[ $# != 0 ]]; do
+	make CFLAGS="-DBTREE_S=$1 -DYEARS=${YEARS:-2} -DSPAN=${SPAN:-30}" clean btree && ./btree
+	shift
+done

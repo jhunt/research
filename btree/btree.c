@@ -5,6 +5,13 @@
 #include <string.h>
 #include <assert.h>
 
+#ifndef YEARS
+#  define YEARS 2
+#endif
+#ifndef SPAN
+#  define SPAN 30
+#endif
+
 static int
 _find(struct btree *bt, uint32_t k)
 {
@@ -139,7 +146,7 @@ _insert(struct btree *bt, uint32_t key, void *val, uint32_t *median)
 
 	/* split the node now, if it is full, to save complexity */
 	if (_isfull(bt)) {
-		mid = bt->nkeys / 2;
+		mid = bt->nkeys * BTREE_S;
 		*median = bt->keys[mid];
 
 		r = _clone(bt);
@@ -220,11 +227,8 @@ btree_analyze(struct btree *bt)
 		bt = bt->vals[0];
 	}
 
-	fprintf(stderr, "ANALYSIS COMPLETE.\n");
-	fprintf(stderr, "------------------\n");
-	fprintf(stderr, "%d deep\n", a.depth);
-	fprintf(stderr, "%d nodes\n", a.nodes);
-	fprintf(stderr, "%d keys\n", a.set);
+	fprintf(stderr, "N=%d, SFF=%0.2f, YEARS=%d, MIN=%d\n", BTREE_N, 1.0*BTREE_S, YEARS, SPAN);
+	fprintf(stderr, "%d keys / %d nodes / %d levels\n", a.set, a.nodes, a.depth);
 	fprintf(stderr, "%0.3f%% slots filled\n", a.set * 100.0 / (a.nodes * BTREE_N));
 
 	size = a.nodes * sizeof(struct btree);
@@ -245,8 +249,8 @@ btree_analyze(struct btree *bt)
 		unit = "K";
 	}
 
-	fprintf(stderr, "using %0.1lf %sB of memory\n", size, unit);
-	fprintf(stderr, "(a node = %lu B)\n", sizeof(struct btree));
+	fprintf(stderr, "%0.1lf %sB\n", size, unit);
+	fprintf(stderr, "\n");
 }
 
 
@@ -264,7 +268,7 @@ main(int argc, char **argv)
 	bt = btree_new();
 	p = (char *)0x1;
 
-	for (i = 0; i < 10U * 365U * 86400U; i += 60) {
+	for (i = 0; i < YEARS * 365U * 86400U; i += SPAN * 60) {
 		ts = 1234567890 + i;
 		if (ts %    1000000 == 0) fprintf(stderr, "%d\n", ts);
 		btree_insert(bt, ts, p++);
