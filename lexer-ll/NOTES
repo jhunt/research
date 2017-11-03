@@ -1,0 +1,12 @@
+The L parser works kind of like lex, but doesn't support a lot of things, and it aims to be simple to parse and reason about.
+
+The language is basically:
+
+
+  spec: [preamble] '^----$' rules '^----$' [postamble]
+  rules:
+       | rules rule;
+  rule: regex 
+
+  preamble and postamble are copied verbatim, with no introspection.
+
