@@ -34,7 +34,7 @@ sub summarize
 	my %sum;
 	for my $m (@_) {
 		$sum{$m->{path}}{usage}{$_} += $m->{usage}{$_}
-			for keys $m->{usage};
+			for keys %{ $m->{usage} };
 	}
 	return \%sum;
 }
@@ -47,7 +47,7 @@ sub dumbdown
 		$path = '[stack]' if $path =~ m{^\[stack};
 		$path = '[mmap]'  if $path =~ m{^/};
 		$sum{$path}{usage}{$_} += $m->{usage}{$_}
-			for keys $m->{usage};
+			for keys %{ $m->{usage} };
 	}
 	return \%sum;
 }
